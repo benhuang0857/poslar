@@ -7,6 +7,7 @@ use App\Http\Controllers\Product\ProductCategoryController;
 use App\Http\Controllers\Product\ProductOptionTypeController;
 use App\Http\Controllers\Product\ProductOptionValueController;
 use App\Http\Controllers\Product\SKUController;
+use App\Http\Controllers\Store\StoreController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -42,3 +43,7 @@ Route::post('skus', [SKUController::class, 'store']);
 Route::post('skus/{id}', [SKUController::class, 'update']);
 Route::delete('skus', [SKUController::class, 'destroy']);
 Route::get('skus/gen-skus/{id}', [SKUController::class, 'genSKUs']);
+
+Route::get('store/{id}', [StoreController::class, 'show']);
+Route::post('store', [StoreController::class, 'store']);
+Route::post('store/{id}', [StoreController::class, 'update']);

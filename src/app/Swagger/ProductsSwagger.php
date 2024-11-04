@@ -162,9 +162,7 @@ class ProductsSwagger
      *     )
      * )
      */
-    public function all() {
-        // 这里可以实现方法逻辑
-    }
+    public function all() {}
 
     /**
      * @OA\Get(
