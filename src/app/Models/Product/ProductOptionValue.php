@@ -9,6 +9,8 @@ class ProductOptionValue extends Model
 {
     use HasFactory;
 
+    protected $table = 'product_option_values';
+
     protected $fillable = [
         'product_option_type_id',
         'value',

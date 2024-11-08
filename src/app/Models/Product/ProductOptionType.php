@@ -9,6 +9,8 @@ class ProductOptionType extends Model
 {
     use HasFactory;
 
+    protected $table = 'product_option_types';
+
     protected $fillable = [
         'name',
         'image',
@@ -22,6 +24,6 @@ class ProductOptionType extends Model
 
     public function optionValues()
     {
-        return $this->hasMany(ProductOptionValue::class);
+        return $this->hasMany(ProductOptionValue::class, 'product_option_type_id', 'id');
     }
 }

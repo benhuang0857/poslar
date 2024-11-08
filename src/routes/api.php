@@ -2,16 +2,21 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\Product\ProductController;
 use App\Http\Controllers\Product\ProductCategoryController;
 use App\Http\Controllers\Product\ProductOptionTypeController;
 use App\Http\Controllers\Product\ProductOptionValueController;
 use App\Http\Controllers\Product\SKUController;
+use App\Http\Controllers\Cart\CartController;
+use App\Http\Controllers\Cart\CartItemController;
 use App\Http\Controllers\Store\StoreController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
+
+Route::apiResource('users', UserController::class);
 
 Route::get('products', [ProductController::class, 'all']);
 Route::get('products/{id}', [ProductController::class, 'show']);
@@ -47,3 +52,11 @@ Route::get('skus/gen-skus/{id}', [SKUController::class, 'genSKUs']);
 Route::get('store/{id}', [StoreController::class, 'show']);
 Route::post('store', [StoreController::class, 'store']);
 Route::post('store/{id}', [StoreController::class, 'update']);
+
+Route::post('cart', [CartController::class, 'store']);
+Route::get('cart/{serial_number}', [CartController::class, 'show']);
+Route::post('cart/{serial_number}', [CartItemController::class, 'store']);
+Route::delete('cart/item/{id}', [CartItemController::class, 'destroy']);
+
+// Route::post('cart-item/{id}', [CartItemController::class, 'update']);
+// Route::post('cart-item/{id}', [CartItemController::class, 'destroy']);
