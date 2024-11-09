@@ -18,8 +18,8 @@ return new class extends Migration
             $table->string('sku')->nullable();
             $table->string('feature_image')->nullable();
             $table->decimal('price', 10, 2)->default(0);
-            $table->boolean('enable_stock')->default(true);
-            $table->integer('stock')->default(0);
+            $table->boolean('enable_stock')->default(false);
+            $table->integer('stock')->default(-999);
             $table->text('description')->nullable();
             $table->boolean('status')->default(false);
             $table->timestamps();
@@ -39,9 +39,9 @@ return new class extends Migration
             $table->string('value'); //選項值名稱（如紅色、L號）
             $table->string('image')->nullable();
             $table->boolean('enable_stock')->default(false);
-            $table->integer('stock')->default(-1);
+            $table->integer('stock')->default(-999);
             $table->boolean('enable_price')->default(false);
-            $table->decimal('price', 10, 2)->default(-1);
+            $table->decimal('price', 10, 2)->default(0);
             $table->timestamps();
         });
         
@@ -58,12 +58,13 @@ return new class extends Migration
             $table->foreignId('product_option_value_id')->constrained('product_option_values')->onDelete('cascade');
             $table->timestamps();
         });
-        
+
         Schema::create('skus', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
             $table->string('sku')->nullable();
-            $table->integer('stock')->default(0);
+            $table->boolean('enable_stock')->default(false);
+            $table->integer('stock')->default(-999);
             $table->decimal('price', 10, 2)->default(0);
             $table->timestamps();
         });

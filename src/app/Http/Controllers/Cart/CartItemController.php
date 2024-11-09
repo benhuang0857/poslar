@@ -6,20 +6,79 @@ use App\Http\Controllers\Controller;
 use App\Models\Cart\Cart;
 use App\Models\Cart\CartItem;
 use App\Models\Product\Product;
+use App\Models\Product\ProductOptionValue;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
 class CartItemController extends Controller
 {
+    // public function store(Request $request, $serial_number)
+    // {
+    //     try {
+    //         $validated = $request->validate([
+    //             'product_id' => 'required|exists:products,id',
+    //             'quantity' => 'required|integer|min:1',
+    //             'options' => 'nullable|json',
+    //         ]);
+    
+    //         $cart = Cart::where('serial_number', $serial_number)->first();
+    //         if (!$cart) {
+    //             return response()->json(['code' => 404, 'data' => ['message' => 'Cart not found']], 404);
+    //         }
+    
+    //         $product = Product::where('id', $validated['product_id'])->first();
+    //         $product_stock = $product->enable_stock ? $product->stock : -999;
+
+    //         if ($product_stock != -999 && $product->stock < $validated['quantity']) {
+    //             return response()->json(['code' => 400, 'data' => ['message' => 'Add product failed. Out of stock']], 400);
+    //         }
+    
+    //         DB::beginTransaction();
+    
+    //         $cartItem = $cart->items()->where('product_id', $validated['product_id'])->first();
+    
+    //         if ($cartItem) {
+    //             $newQuantity = $cartItem->quantity + $validated['quantity'];
+
+    //             if ($product_stock != -999 && $product->stock < $newQuantity) {
+    //                 DB::rollBack();
+    //                 return response()->json(['code' => 400, 'data' => ['message' => 'Add product failed. Out of stock']], 400);
+    //             }
+    
+    //             $cartItem->quantity = $newQuantity;
+    //             $cartItem->price = $newQuantity * $product->price;
+    //             $cartItem->save();
+    //         } else {
+    //             $cart->items()->create([
+    //                 'product_id' => $validated['product_id'],
+    //                 'quantity' => $validated['quantity'],
+    //                 'price' => $product->price,
+    //                 'options' => $validated['options'] ?? null,
+    //             ]);
+    //         }
+
+    //         if ($product_stock != -999) {
+    //             $product->decrement('stock', $validated['quantity']);
+    //         }
+    
+    //         $cart->calculateTotalPrice();
+    //         DB::commit();
+    
+    //         return response()->json(['code' => 201, 'data' => ['message' => 'Add product into cart successfully']], 201);
+    //     } catch (Exception $e) {
+    //         DB::rollBack();
+    //         return response()->json(['code' => 500, 'data' => $e->getMessage()], 500);
+    //     }
+    // }
+
     public function store(Request $request, $serial_number)
     {
         try {
             $validated = $request->validate([
                 'product_id' => 'required|exists:products,id',
                 'quantity' => 'required|integer|min:1',
-                'price' => 'required|numeric|min:0',
-                'options' => 'nullable|json',
+                'options' => 'nullable|array', // options 轉為 array
             ]);
     
             $cart = Cart::where('serial_number', $serial_number)->first();
@@ -29,36 +88,72 @@ class CartItemController extends Controller
     
             $product = Product::where('id', $validated['product_id'])->first();
             $product_stock = $product->enable_stock ? $product->stock : -999;
-
+    
+            // 檢查主商品庫存
             if ($product_stock != -999 && $product->stock < $validated['quantity']) {
                 return response()->json(['code' => 400, 'data' => ['message' => 'Add product failed. Out of stock']], 400);
+            }
+    
+            $totalPrice = $product->price * $validated['quantity']; // 初始價格
+    
+            // 檢查選擇的選項的庫存與價格
+            if ($validated['options']) {
+                foreach ($validated['options'] as $option) {
+                    foreach ($option['option_values'] as $optionValue) {
+                        $optionValueModel = ProductOptionValue::find($optionValue['id']);
+                        if ($optionValueModel) {
+                            // 檢查選項的庫存
+                            if ($optionValueModel->enable_stock && $optionValueModel->stock < $validated['quantity']) {
+                                return response()->json(['code' => 400, 'data' => ['message' => 'Option "' . $optionValueModel->value . '" out of stock']], 400);
+                            }
+                            // 計算價格
+                            $totalPrice += $optionValue['price'] * $validated['quantity'];
+                        }
+                    }
+                }
             }
     
             DB::beginTransaction();
     
             $cartItem = $cart->items()->where('product_id', $validated['product_id'])->first();
     
+            // 更新購物車商品
             if ($cartItem) {
                 $newQuantity = $cartItem->quantity + $validated['quantity'];
-
+    
                 if ($product_stock != -999 && $product->stock < $newQuantity) {
                     DB::rollBack();
                     return response()->json(['code' => 400, 'data' => ['message' => 'Add product failed. Out of stock']], 400);
                 }
     
                 $cartItem->quantity = $newQuantity;
+                $cartItem->price = $totalPrice;
+                $cartItem->options = json_encode($validated['options']);
                 $cartItem->save();
             } else {
                 $cart->items()->create([
                     'product_id' => $validated['product_id'],
                     'quantity' => $validated['quantity'],
-                    'price' => $validated['price'],
-                    'options' => $validated['options'] ?? null,
+                    'price' => $totalPrice,
+                    'options' => json_encode($validated['options']),
                 ]);
             }
-
+    
+            // 更新商品庫存
             if ($product_stock != -999) {
                 $product->decrement('stock', $validated['quantity']);
+            }
+    
+            // 更新選項庫存
+            if ($validated['options']) {
+                foreach ($validated['options'] as $option) {
+                    foreach ($option['option_values'] as $optionValue) {
+                        $optionValueModel = ProductOptionValue::find($optionValue['id']);
+                        if ($optionValueModel && $optionValueModel->enable_stock) {
+                            $optionValueModel->decrement('stock', $validated['quantity']);
+                        }
+                    }
+                }
             }
     
             $cart->calculateTotalPrice();
@@ -81,7 +176,7 @@ class CartItemController extends Controller
             DB::beginTransaction();
 
             $cartItem = CartItem::findOrFail($id);
-            $product = $cartItem->product;
+            $product = Product::where('id', $cartItem->product_id)->first();
             $newQuantity = $validated['quantity'];
             $currentQuantity = $cartItem->quantity;
 
@@ -101,6 +196,7 @@ class CartItemController extends Controller
             }
 
             $cartItem->quantity = $newQuantity;
+            $cartItem->price = $newQuantity * $product->price;
             $cartItem->save();
 
             $cartItem->cart->calculateTotalPrice();

@@ -56,6 +56,7 @@ Route::post('store/{id}', [StoreController::class, 'update']);
 Route::post('cart', [CartController::class, 'store']);
 Route::get('cart/{serial_number}', [CartController::class, 'show']);
 Route::post('cart/{serial_number}', [CartItemController::class, 'store']);
+Route::post('cart/item/{id}', [CartItemController::class, 'update']);
 Route::delete('cart/item/{id}', [CartItemController::class, 'destroy']);
 
 // Route::post('cart-item/{id}', [CartItemController::class, 'update']);
