@@ -39,7 +39,7 @@ class CartController extends Controller
     public function show($serial_number)
     {
         try {
-            $result = Cart::with('items')->where('serial_number', $serial_number)->first();
+            $result = Cart::with('items.product.optionTypes.optionValues')->where('serial_number', $serial_number)->first();
 
             return response()->json(['code' => http_response_code(), 'data' => ['list' => $result]]);
         } catch (Exception $e) {

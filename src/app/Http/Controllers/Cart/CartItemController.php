@@ -13,64 +13,6 @@ use Exception;
 
 class CartItemController extends Controller
 {
-    // public function store(Request $request, $serial_number)
-    // {
-    //     try {
-    //         $validated = $request->validate([
-    //             'product_id' => 'required|exists:products,id',
-    //             'quantity' => 'required|integer|min:1',
-    //             'options' => 'nullable|json',
-    //         ]);
-    
-    //         $cart = Cart::where('serial_number', $serial_number)->first();
-    //         if (!$cart) {
-    //             return response()->json(['code' => 404, 'data' => ['message' => 'Cart not found']], 404);
-    //         }
-    
-    //         $product = Product::where('id', $validated['product_id'])->first();
-    //         $product_stock = $product->enable_stock ? $product->stock : -999;
-
-    //         if ($product_stock != -999 && $product->stock < $validated['quantity']) {
-    //             return response()->json(['code' => 400, 'data' => ['message' => 'Add product failed. Out of stock']], 400);
-    //         }
-    
-    //         DB::beginTransaction();
-    
-    //         $cartItem = $cart->items()->where('product_id', $validated['product_id'])->first();
-    
-    //         if ($cartItem) {
-    //             $newQuantity = $cartItem->quantity + $validated['quantity'];
-
-    //             if ($product_stock != -999 && $product->stock < $newQuantity) {
-    //                 DB::rollBack();
-    //                 return response()->json(['code' => 400, 'data' => ['message' => 'Add product failed. Out of stock']], 400);
-    //             }
-    
-    //             $cartItem->quantity = $newQuantity;
-    //             $cartItem->price = $newQuantity * $product->price;
-    //             $cartItem->save();
-    //         } else {
-    //             $cart->items()->create([
-    //                 'product_id' => $validated['product_id'],
-    //                 'quantity' => $validated['quantity'],
-    //                 'price' => $product->price,
-    //                 'options' => $validated['options'] ?? null,
-    //             ]);
-    //         }
-
-    //         if ($product_stock != -999) {
-    //             $product->decrement('stock', $validated['quantity']);
-    //         }
-    
-    //         $cart->calculateTotalPrice();
-    //         DB::commit();
-    
-    //         return response()->json(['code' => 201, 'data' => ['message' => 'Add product into cart successfully']], 201);
-    //     } catch (Exception $e) {
-    //         DB::rollBack();
-    //         return response()->json(['code' => 500, 'data' => $e->getMessage()], 500);
-    //     }
-    // }
 
     public function store(Request $request, $serial_number)
     {
@@ -80,24 +22,24 @@ class CartItemController extends Controller
                 'quantity' => 'required|integer|min:1',
                 'options' => 'nullable|array', // options 轉為 array
             ]);
-    
+
             $cart = Cart::where('serial_number', $serial_number)->first();
             if (!$cart) {
                 return response()->json(['code' => 404, 'data' => ['message' => 'Cart not found']], 404);
             }
-    
+
             $product = Product::where('id', $validated['product_id'])->first();
             $product_stock = $product->enable_stock ? $product->stock : -999;
-    
+
             // 檢查主商品庫存
             if ($product_stock != -999 && $product->stock < $validated['quantity']) {
                 return response()->json(['code' => 400, 'data' => ['message' => 'Add product failed. Out of stock']], 400);
             }
-    
+
             $totalPrice = $product->price * $validated['quantity']; // 初始價格
-    
+
             // 檢查選擇的選項的庫存與價格
-            if ($validated['options']) {
+            if (isset($validated['options'])) {
                 foreach ($validated['options'] as $option) {
                     foreach ($option['option_values'] as $optionValue) {
                         $optionValueModel = ProductOptionValue::find($optionValue['id']);
@@ -112,40 +54,40 @@ class CartItemController extends Controller
                     }
                 }
             }
-    
+
             DB::beginTransaction();
-    
+
             $cartItem = $cart->items()->where('product_id', $validated['product_id'])->first();
-    
+
             // 更新購物車商品
             if ($cartItem) {
                 $newQuantity = $cartItem->quantity + $validated['quantity'];
-    
+
                 if ($product_stock != -999 && $product->stock < $newQuantity) {
                     DB::rollBack();
                     return response()->json(['code' => 400, 'data' => ['message' => 'Add product failed. Out of stock']], 400);
                 }
-    
+
                 $cartItem->quantity = $newQuantity;
                 $cartItem->price = $totalPrice;
-                $cartItem->options = json_encode($validated['options']);
+                $cartItem->options = isset($validated['options']) ? json_encode($validated['options']) : null;
                 $cartItem->save();
             } else {
                 $cart->items()->create([
                     'product_id' => $validated['product_id'],
                     'quantity' => $validated['quantity'],
                     'price' => $totalPrice,
-                    'options' => json_encode($validated['options']),
+                    'options' => isset($validated['options']) ? json_encode($validated['options']) : null,
                 ]);
             }
-    
+
             // 更新商品庫存
             if ($product_stock != -999) {
                 $product->decrement('stock', $validated['quantity']);
             }
-    
+
             // 更新選項庫存
-            if ($validated['options']) {
+            if (isset($validated['options'])) {
                 foreach ($validated['options'] as $option) {
                     foreach ($option['option_values'] as $optionValue) {
                         $optionValueModel = ProductOptionValue::find($optionValue['id']);
@@ -155,10 +97,10 @@ class CartItemController extends Controller
                     }
                 }
             }
-    
+
             $cart->calculateTotalPrice();
             DB::commit();
-    
+
             return response()->json(['code' => 201, 'data' => ['message' => 'Add product into cart successfully']], 201);
         } catch (Exception $e) {
             DB::rollBack();
