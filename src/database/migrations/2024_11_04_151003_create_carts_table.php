@@ -15,9 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('serial_number', 20)->unique()->nullable();
             $table->unsignedBigInteger('user_id')->nullable();
+            $table->unsignedBigInteger('customer_id')->nullable();
             $table->unsignedBigInteger('dining_table_id')->nullable();
+            $table->unsignedBigInteger('payment_id')->nullable();
+            $table->unsignedBigInteger('promotion_id')->nullable();
             $table->decimal('total_price', 10, 2)->default(0);
-            $table->boolean('status')->default(true);
+            $table->enum('status', ['open', 'checked_out', 'cancelled'])->default('open');
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
@@ -30,9 +33,16 @@ return new class extends Migration
             $table->integer('quantity')->default(1);
             $table->decimal('price', 10, 2);
             $table->json('options')->nullable();
+            $table->timestamps();
 
             $table->foreign('cart_id')->references('id')->on('carts')->onDelete('cascade');
-            $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
+        });
+
+        Schema::create('cart_item_product_option_value', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('cart_item_id')->constrained()->onDelete('cascade');
+            $table->foreignId('product_option_value_id')->constrained()->onDelete('cascade');
+            $table->timestamps();
         });
     }
 
@@ -43,5 +53,6 @@ return new class extends Migration
     {
         Schema::dropIfExists('cart_items');
         Schema::dropIfExists('carts');
+        Schema::dropIfExists('cart_item_product_option_value');
     }
 };

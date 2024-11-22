@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // php artisan db:seed
         // User::factory(10)->create();
 
         User::factory()->create([
@@ -28,6 +29,11 @@ class DatabaseSeeder extends Seeder
             ProductCategorySeeder::class,
             ProductCategoryRelationSeeder::class,
             ProductOptionTypesProductsSeeder::class,
+            ProductOptionValuesProductsSeeder::class,
+            DiningTableSeeder::class,
+            PaymentSeeder::class,
+            PromotionSeeder::class,
+            CustomerSeeder::class,
         ]);
     }
 }

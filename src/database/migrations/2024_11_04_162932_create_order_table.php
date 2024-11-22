@@ -15,13 +15,15 @@ return new class extends Migration
             $table->id();
             $table->string('serial_number', 20)->unique()->nullable();
             $table->unsignedBigInteger('user_id')->nullable();
+            $table->unsignedBigInteger('customer_id')->nullable();
             $table->unsignedBigInteger('dining_table_id')->nullable();
             $table->decimal('total_price', 10, 2);
             $table->string('payment_method', 50)->nullable();
-            $table->string('status', 50)->default('pending');
+            $table->enum('status', ['process', 'pending', 'completed'])->default('pending');
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
+            $table->foreign('customer_id')->references('id')->on('customers')->onDelete('set null');
         });
 
         Schema::create('order_items', function (Blueprint $table) {
@@ -31,7 +33,7 @@ return new class extends Migration
             $table->integer('quantity')->default(1);
             $table->decimal('unit_price', 10, 2);
             $table->json('options')->nullable();
-            $table->string('status', 50)->default('pending');
+            $table->enum('status', ['process', 'pending', 'completed'])->default('pending');
             $table->boolean('is_kitchen_item')->default(false);
         
             $table->foreign('order_id')->references('id')->on('orders')->onDelete('cascade');

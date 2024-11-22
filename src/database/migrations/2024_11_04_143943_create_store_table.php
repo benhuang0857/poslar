@@ -22,9 +22,40 @@ return new class extends Migration
             $table->string('logo_url')->nullable();
             $table->json('opening_hours')->nullable();
             $table->json('social_links')->nullable();
-            $table->boolean('status')->default(true);
+            $table->boolean('status')->default(false);
             $table->timestamps();
         });
+
+        Schema::create('dining_table', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->integer('quantity')->defualt(0);
+            $table->string('qrcode')->nullable();
+            $table->text('description')->nullable();
+            $table->boolean('status')->default(false);
+            $table->timestamps();
+        });
+
+        Schema::create('payment', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->boolean('status')->default(false);
+            $table->timestamps();
+        });
+
+        Schema::create('promotion', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->decimal('discount', 10, 2)->default(0);
+            $table->date('start_time')->default('1900-01-01');
+            $table->date('end_time')->default('1900-01-01');
+            $table->boolean('status')->default(false);
+            $table->timestamps();
+        });
+
+
     }
 
     /**
@@ -33,5 +64,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('store');
+        Schema::dropIfExists('dining_table');
+        Schema::dropIfExists('payment');
+        Schema::dropIfExists('promotion');
     }
 };

@@ -13,14 +13,13 @@ use Exception;
 
 class CartItemController extends Controller
 {
-
     public function store(Request $request, $serial_number)
     {
         try {
             $validated = $request->validate([
                 'product_id' => 'required|exists:products,id',
                 'quantity' => 'required|integer|min:1',
-                'options' => 'nullable|array', // options 轉為 array
+                'options.*' => 'exists:product_option_values,id', // 驗證 options 必須是有效的 ID
             ]);
 
             $cart = Cart::where('serial_number', $serial_number)->first();
@@ -29,29 +28,29 @@ class CartItemController extends Controller
             }
 
             $product = Product::where('id', $validated['product_id'])->first();
-            $product_stock = $product->enable_stock ? $product->stock : -999;
-
-            // 檢查主商品庫存
-            if ($product_stock != -999 && $product->stock < $validated['quantity']) {
+            if ($product->enable_stock && $product->stock < $validated['quantity']) {
                 return response()->json(['code' => 400, 'data' => ['message' => 'Add product failed. Out of stock']], 400);
             }
 
             $totalPrice = $product->price * $validated['quantity']; // 初始價格
-
-            // 檢查選擇的選項的庫存與價格
+            $options = [];
             if (isset($validated['options'])) {
-                foreach ($validated['options'] as $option) {
-                    foreach ($option['option_values'] as $optionValue) {
-                        $optionValueModel = ProductOptionValue::find($optionValue['id']);
-                        if ($optionValueModel) {
-                            // 檢查選項的庫存
-                            if ($optionValueModel->enable_stock && $optionValueModel->stock < $validated['quantity']) {
-                                return response()->json(['code' => 400, 'data' => ['message' => 'Option "' . $optionValueModel->value . '" out of stock']], 400);
-                            }
-                            // 計算價格
-                            $totalPrice += $optionValue['price'] * $validated['quantity'];
-                        }
+                $optionValues = ProductOptionValue::whereIn('id', $validated['options'])->get();
+
+                foreach ($optionValues as $optionValueModel) {
+                    // 檢查選項的庫存
+                    if ($optionValueModel->enable_stock && $optionValueModel->stock < $validated['quantity']) {
+                        return response()->json([
+                            'code' => 400,
+                            'data' => ['message' => 'Option "' . $optionValueModel->value . '" out of stock'],
+                        ], 400);
                     }
+
+                    // 計算價格
+                    $totalPrice += $optionValueModel->price * $validated['quantity'];
+
+                    // 儲存選項 ID
+                    $options[] = $optionValueModel->id;
                 }
             }
 
@@ -63,38 +62,38 @@ class CartItemController extends Controller
             if ($cartItem) {
                 $newQuantity = $cartItem->quantity + $validated['quantity'];
 
-                if ($product_stock != -999 && $product->stock < $newQuantity) {
+                if ($product->enable_stock && $product->stock < $newQuantity) {
                     DB::rollBack();
                     return response()->json(['code' => 400, 'data' => ['message' => 'Add product failed. Out of stock']], 400);
                 }
 
                 $cartItem->quantity = $newQuantity;
                 $cartItem->price = $totalPrice;
-                $cartItem->options = isset($validated['options']) ? json_encode($validated['options']) : null;
                 $cartItem->save();
+
+                // 更新選項關聯
+                $cartItem->options()->sync($options); // 同步選項 ID
             } else {
-                $cart->items()->create([
+                $cartItem = $cart->items()->create([
                     'product_id' => $validated['product_id'],
                     'quantity' => $validated['quantity'],
                     'price' => $totalPrice,
-                    'options' => isset($validated['options']) ? json_encode($validated['options']) : null,
                 ]);
+
+                // 建立選項關聯
+                $cartItem->options()->attach($options); // 儲存選項 ID
             }
 
             // 更新商品庫存
-            if ($product_stock != -999) {
+            if ($product->enable_stock) {
                 $product->decrement('stock', $validated['quantity']);
             }
 
             // 更新選項庫存
-            if (isset($validated['options'])) {
-                foreach ($validated['options'] as $option) {
-                    foreach ($option['option_values'] as $optionValue) {
-                        $optionValueModel = ProductOptionValue::find($optionValue['id']);
-                        if ($optionValueModel && $optionValueModel->enable_stock) {
-                            $optionValueModel->decrement('stock', $validated['quantity']);
-                        }
-                    }
+            foreach ($options as $option) {
+                $optionValueModel = ProductOptionValue::find($option);
+                if ($optionValueModel && $optionValueModel->enable_stock) {
+                    $optionValueModel->decrement('stock', $validated['quantity']);
                 }
             }
 
@@ -113,6 +112,8 @@ class CartItemController extends Controller
         try {
             $validated = $request->validate([
                 'quantity' => 'required|integer|min:1',
+                'options' => 'nullable|array',  // 接收簡化的 options 格式
+                'options.*' => 'exists:product_option_values,id',  // 驗證 options 必須是有效的 ID
             ]);
 
             DB::beginTransaction();
@@ -122,6 +123,7 @@ class CartItemController extends Controller
             $newQuantity = $validated['quantity'];
             $currentQuantity = $cartItem->quantity;
 
+            // 檢查主商品庫存
             if ($product->enable_stock && $newQuantity > $currentQuantity) {
                 $requiredStock = $newQuantity - $currentQuantity;
                 if ($product->stock < $requiredStock) {
@@ -129,6 +131,27 @@ class CartItemController extends Controller
                 }
             }
 
+            // 處理選項庫存和價格
+            $totalPrice = $product->price * $newQuantity;  // 初始價格
+
+            if (isset($validated['options'])) {
+                $optionValues = ProductOptionValue::whereIn('id', $validated['options'])->get();
+                
+                foreach ($optionValues as $optionValueModel) {
+                    // 檢查選項的庫存
+                    if ($optionValueModel->enable_stock && $optionValueModel->stock < $newQuantity) {
+                        return response()->json([
+                            'code' => 400,
+                            'data' => ['message' => 'Option "' . $optionValueModel->value . '" out of stock'],
+                        ], 400);
+                    }
+
+                    // 計算選項價格
+                    $totalPrice += $optionValueModel->price * $newQuantity;
+                }
+            }
+
+            // 更新商品庫存
             if ($product->enable_stock) {
                 if ($newQuantity > $currentQuantity) {
                     $product->decrement('stock', $newQuantity - $currentQuantity);
@@ -137,10 +160,13 @@ class CartItemController extends Controller
                 }
             }
 
+            // 更新購物車商品
             $cartItem->quantity = $newQuantity;
-            $cartItem->price = $newQuantity * $product->price;
+            $cartItem->price = $totalPrice;
+            $cartItem->options = isset($validated['options']) ? json_encode($validated['options']) : null;
             $cartItem->save();
 
+            // 更新購物車總價
             $cartItem->cart->calculateTotalPrice();
 
             DB::commit();

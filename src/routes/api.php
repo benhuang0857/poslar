@@ -11,6 +11,9 @@ use App\Http\Controllers\Product\SKUController;
 use App\Http\Controllers\Cart\CartController;
 use App\Http\Controllers\Cart\CartItemController;
 use App\Http\Controllers\Store\StoreController;
+use App\Http\Controllers\Store\DiningTable;
+use App\Http\Controllers\Store\Payment;
+use App\Http\Controllers\Store\Promotion;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -53,11 +56,29 @@ Route::get('store/{id}', [StoreController::class, 'show']);
 Route::post('store', [StoreController::class, 'store']);
 Route::post('store/{id}', [StoreController::class, 'update']);
 
+Route::get('dining-table', [DiningTableController::class, 'all']);
+Route::get('dining-table/{id}', [DiningTableController::class, 'show']);
+Route::post('dining-table', [DiningTableController::class, 'store']);
+Route::post('dining-table/{id}', [DiningTableController::class, 'update']);
+Route::delete('dining-table', [DiningTableController::class, 'destroy']);
+
+Route::get('payment', [PaymentController::class, 'all']);
+Route::get('payment/{id}', [PaymentController::class, 'show']);
+Route::post('payment', [PaymentController::class, 'store']);
+Route::post('payment/{id}', [PaymentController::class, 'update']);
+Route::delete('payment', [PaymentController::class, 'destroy']);
+
+Route::get('promotion', [PromotionController::class, 'all']);
+Route::get('promotion/{id}', [PromotionController::class, 'show']);
+Route::post('promotion', [PromotionController::class, 'store']);
+Route::post('promotion/{id}', [PromotionController::class, 'update']);
+Route::delete('promotion', [PromotionController::class, 'destroy']);
+
 Route::post('cart', [CartController::class, 'store']);
 Route::get('cart/{serial_number}', [CartController::class, 'show']);
-Route::post('cart/{serial_number}', [CartItemController::class, 'store']);
-Route::post('cart/item/{id}', [CartItemController::class, 'update']);
-Route::delete('cart/item/{id}', [CartItemController::class, 'destroy']);
+Route::post('cart/{serial_number}', [CartController::class, 'update']);
+Route::post('add-cart/{serial_number}', [CartItemController::class, 'store']);
+Route::post('add-cart/item/{id}', [CartItemController::class, 'update']);
+Route::delete('add-cart/item/{id}', [CartItemController::class, 'destroy']);
+Route::post('cart/checkout/{serial_number}', [CartController::class, 'checkout']);
 
-// Route::post('cart-item/{id}', [CartItemController::class, 'update']);
-// Route::post('cart-item/{id}', [CartItemController::class, 'destroy']);
