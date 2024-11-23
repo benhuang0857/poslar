@@ -94,7 +94,7 @@ class CartController extends Controller
 
             if($cart->promotion_id) {
                 $promotion = Promotion::where('id', $cart->promotion_id)->firstOrFail();
-                $cart->total_price = $cart->total_price * $promotion->discount;
+                $cart->final_price = $cart->total_price * $promotion->discount;
             }
 
             $cart->save();

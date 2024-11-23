@@ -22,8 +22,18 @@ class Cart extends Model
     public function calculateTotalPrice()
     {
         $this->total_price = $this->items->sum(function ($item) {
-            return $item->price * $item->quantity;
+            return $item->price;
         });
+        $this->save();
+    }
+
+    public function calculateFinalPrice()
+    {
+        $promotion = $this->promotion;
+
+        $discount = $promotion ? $promotion->discount : 1;
+        $this->final_price = $this->total_price * $discount;
+
         $this->save();
     }
 
