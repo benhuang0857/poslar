@@ -17,27 +17,22 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id')->nullable();
             $table->unsignedBigInteger('customer_id')->nullable();
             $table->unsignedBigInteger('dining_table_id')->nullable();
+            $table->unsignedBigInteger('payment_id')->nullable();
+            $table->unsignedBigInteger('promotion_id')->nullable();
             $table->decimal('total_price', 10, 2);
-            $table->string('payment_method', 50)->nullable();
-            $table->enum('status', ['process', 'pending', 'completed'])->default('pending');
+            $table->decimal('final_price', 10, 2);
+            $table->boolean('paid')->default(false);
+            $table->enum('status', ['process', 'pending', 'completed', 'cancelled', 'delivered'])->default('process');
             $table->timestamps();
-
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
-            $table->foreign('customer_id')->references('id')->on('customers')->onDelete('set null');
         });
 
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('order_id');
-            $table->unsignedBigInteger('product_id');
             $table->integer('quantity')->default(1);
+            $table->string('item')->nullable();
             $table->decimal('unit_price', 10, 2);
-            $table->json('options')->nullable();
-            $table->enum('status', ['process', 'pending', 'completed'])->default('pending');
-            $table->boolean('is_kitchen_item')->default(false);
-        
-            $table->foreign('order_id')->references('id')->on('orders')->onDelete('cascade');
-            $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
+            $table->enum('status', ['process', 'pending', 'completed', 'cancelled'])->default('process');
         });
 
     }

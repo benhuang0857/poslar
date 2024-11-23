@@ -20,7 +20,8 @@ return new class extends Migration
             $table->unsignedBigInteger('payment_id')->nullable();
             $table->unsignedBigInteger('promotion_id')->nullable();
             $table->decimal('total_price', 10, 2)->default(0);
-            $table->enum('status', ['open', 'checked_out', 'cancelled'])->default('open');
+            $table->decimal('final_price', 10, 2)->default(0);
+            $table->enum('status', ['open', 'checked_out', 'cancelled', 'expired'])->default('open');
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
@@ -32,7 +33,6 @@ return new class extends Migration
             $table->unsignedBigInteger('product_id');
             $table->integer('quantity')->default(1);
             $table->decimal('price', 10, 2);
-            $table->json('options')->nullable();
             $table->timestamps();
 
             $table->foreign('cart_id')->references('id')->on('carts')->onDelete('cascade');
@@ -51,8 +51,8 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('cart_item_product_option_value');
         Schema::dropIfExists('cart_items');
         Schema::dropIfExists('carts');
-        Schema::dropIfExists('cart_item_product_option_value');
     }
 };

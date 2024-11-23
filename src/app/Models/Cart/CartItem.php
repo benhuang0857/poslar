@@ -11,8 +11,6 @@ class CartItem extends Model
 {
     use HasFactory;
 
-    public $timestamps = false;
-
     protected $fillable = [
         'serial_number',
         'cart_id',
@@ -22,16 +20,11 @@ class CartItem extends Model
         'options',
     ];
 
-    protected $casts = [
-        'options' => 'array',
-    ];
-
     public function cart()
     {
         return $this->belongsTo(Cart::class);
     }
 
-    // option
     public function product()
     {
         return $this->belongsTo(Product::class, 'product_id');

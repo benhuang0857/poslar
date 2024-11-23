@@ -99,11 +99,13 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('product_option_values_skus');
-        Schema::dropIfExists('skus');
         Schema::dropIfExists('product_option_values_products');
+        Schema::dropIfExists('product_option_types_products');
+        Schema::dropIfExists('product_category_relation');
+
+        Schema::dropIfExists('skus');
         Schema::dropIfExists('product_option_values');
         Schema::dropIfExists('product_option_types');
-        Schema::dropIfExists('product_category_relation');
         Schema::dropIfExists('product_categories');
         Schema::dropIfExists('products');
     }

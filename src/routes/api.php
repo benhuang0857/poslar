@@ -74,11 +74,13 @@ Route::post('promotion', [PromotionController::class, 'store']);
 Route::post('promotion/{id}', [PromotionController::class, 'update']);
 Route::delete('promotion', [PromotionController::class, 'destroy']);
 
-Route::post('cart', [CartController::class, 'store']);
 Route::get('cart/{serial_number}', [CartController::class, 'show']);
-Route::post('cart/{serial_number}', [CartController::class, 'update']);
-Route::post('add-cart/{serial_number}', [CartItemController::class, 'store']);
-Route::post('add-cart/item/{id}', [CartItemController::class, 'update']);
-Route::delete('add-cart/item/{id}', [CartItemController::class, 'destroy']);
-Route::post('cart/checkout/{serial_number}', [CartController::class, 'checkout']);
+Route::post('cart', [CartController::class, 'store']);
+Route::put('cart/{serial_number}', [CartController::class, 'update']);
+Route::delete('cart/{serial_number}', [CartController::class, 'destroy']);
+
+Route::post('cart/{serial_number}/add', [CartItemController::class, 'store']);
+Route::put('cart/{serial_number}/item/{id}', [CartItemController::class, 'update']);
+Route::delete('cart/{serial_number}/item/{id}', [CartItemController::class, 'destroy']);
+Route::post('cart/{serial_number}/checkout', [CartController::class, 'checkout']);
 

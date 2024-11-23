@@ -10,7 +10,6 @@ use App\Models\Store\Promotion;
 use App\Models\User;
 use App\Models\Customer;
 
-
 class Cart extends Model
 {
     use HasFactory;
