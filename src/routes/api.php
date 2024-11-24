@@ -12,9 +12,9 @@ use App\Http\Controllers\Cart\CartController;
 use App\Http\Controllers\Cart\CartItemController;
 use App\Http\Controllers\Order\OrderController;
 use App\Http\Controllers\Store\StoreController;
-use App\Http\Controllers\Store\DiningTable;
-use App\Http\Controllers\Store\Payment;
-use App\Http\Controllers\Store\Promotion;
+use App\Http\Controllers\Store\DiningTableController;
+use App\Http\Controllers\Store\PaymentController;
+use App\Http\Controllers\Store\PromotionController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
