@@ -29,10 +29,20 @@ return new class extends Migration
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('order_id');
+            $table->unsignedBigInteger('product_id');
             $table->integer('quantity')->default(1);
-            $table->string('item')->nullable();
-            $table->decimal('unit_price', 10, 2);
-            $table->enum('status', ['process', 'pending', 'completed', 'cancelled'])->default('process');
+            $table->decimal('price', 10, 2);
+            $table->enum('status', ['process', 'pending', 'completed', 'cancelled', 'delivered'])->default('process');
+            $table->timestamps();
+
+            $table->foreign('order_id')->references('id')->on('orders')->onDelete('cascade');
+        });
+
+        Schema::create('order_item_product_option_value', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('order_item_id')->constrained()->onDelete('cascade');
+            $table->foreignId('product_option_value_id')->constrained()->onDelete('cascade');
+            $table->timestamps();
         });
 
     }
@@ -42,6 +52,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('order_item_product_option_value');
         Schema::dropIfExists('order_items');
         Schema::dropIfExists('orders');
     }

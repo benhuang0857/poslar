@@ -10,6 +10,7 @@ use App\Http\Controllers\Product\ProductOptionValueController;
 use App\Http\Controllers\Product\SKUController;
 use App\Http\Controllers\Cart\CartController;
 use App\Http\Controllers\Cart\CartItemController;
+use App\Http\Controllers\Order\OrderController;
 use App\Http\Controllers\Store\StoreController;
 use App\Http\Controllers\Store\DiningTable;
 use App\Http\Controllers\Store\Payment;
@@ -83,4 +84,7 @@ Route::post('cart/{serial_number}/add', [CartItemController::class, 'store']);
 Route::put('cart/{serial_number}/item/{id}', [CartItemController::class, 'update']);
 Route::delete('cart/{serial_number}/item/{id}', [CartItemController::class, 'destroy']);
 Route::post('cart/{serial_number}/checkout', [CartController::class, 'checkout']);
+
+Route::get('order/{serial_number}', [OrderController::class, 'show']);
+Route::post('order/{serial_number}', [OrderController::class, 'store']);
 

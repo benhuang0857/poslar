@@ -21,7 +21,7 @@ return new class extends Migration
             $table->unsignedBigInteger('promotion_id')->nullable();
             $table->decimal('total_price', 10, 2)->default(0);
             $table->decimal('final_price', 10, 2)->default(0);
-            $table->enum('status', ['open', 'checked_out', 'cancelled', 'expired'])->default('open');
+            $table->enum('status', ['open', 'checked_out', 'completed', 'cancelled', 'expired'])->default('open');
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');

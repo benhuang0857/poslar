@@ -245,5 +245,4 @@ class CartItemController extends Controller
         }
     }
     
-
 }
