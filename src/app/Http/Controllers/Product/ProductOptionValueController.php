@@ -39,6 +39,12 @@ class ProductOptionValueController extends Controller
                 $validated['price'] = -1;
             }
 
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $imagePath = $image->store('public/images');
+                $validated['image'] = $imagePath;
+            }  
+
             $optionValue = ProductOptionValue::create($validated);
 
             return response()->json(['code' => 201, 'data' => ['message' => 'Success', 'product_option_value' => $optionValue]]);
@@ -71,6 +77,13 @@ class ProductOptionValueController extends Controller
             ]);
 
             $optionValue = ProductOptionValue::findOrFail($id);
+
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $imagePath = $image->store('public/images');
+                $validated['image'] = $imagePath;
+            }  
+            
             $optionValue->update($validated);
             return response()->json(['code' => 200, 'data' => ['message' => 'Success']]);
         } catch (\Exception $e) {

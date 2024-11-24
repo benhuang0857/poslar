@@ -41,6 +41,12 @@ class ProductCategoryController extends Controller
                 'products' => 'nullable|array',
             ]);
 
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $imagePath = $image->store('public/images');
+                $validated['image'] = $imagePath;
+            }   
+
             $productCategory = ProductCategory::create($validated);
 
             if (isset($request->products)) {
@@ -65,6 +71,13 @@ class ProductCategoryController extends Controller
             ]);
 
             $productCategory = ProductCategory::findOrFail($id);
+
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $imagePath = $image->store('public/images');
+                $validated['image'] = $imagePath;
+            }  
+            
             $productCategory->update($validated);
 
             if (isset($request->products)) {

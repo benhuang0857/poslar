@@ -69,6 +69,12 @@ class ProductController extends Controller
                 'option_values' => 'nullable|array',
                 'categories' => 'nullable|array',
             ]);
+
+            if ($request->hasFile('feature_image')) {
+                $image = $request->file('feature_image');
+                $imagePath = $image->store('public/images'); // Save image in the 'public/images' directory
+                $validated['feature_image'] = $imagePath; // Store the path in the database
+            }    
     
             $product = Product::create($validated);
 
@@ -125,6 +131,13 @@ class ProductController extends Controller
             ]);
 
             $product = Product::findOrFail($id);
+
+            if ($request->hasFile('feature_image')) {
+                $image = $request->file('feature_image');
+                $imagePath = $image->store('public/images');
+                $validated['feature_image'] = $imagePath;
+            }
+
             $product->update($validated);
 
             if (isset($request->option_types)) {
