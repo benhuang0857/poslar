@@ -15,5 +15,6 @@ class ProductCategorySeeder extends Seeder
     {
         ProductCategory::create(['name' => '套餐', 'slug' => 'bundle-dish']);
         ProductCategory::create(['name' => '單點', 'slug' => 'single-dish']);
+        ProductCategory::create(['name' => '推薦', 'slug' => 'recommend-dish']);
     }
 }

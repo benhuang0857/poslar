@@ -15,6 +15,6 @@ class ProductOptionTypeSeeder extends Seeder
     {
         ProductOptionType::create(['name' => '前菜', 'enable_multi_select' => false]);
         ProductOptionType::create(['name' => '主餐', 'enable_multi_select' => false]);
-        ProductOptionType::create(['name' => '點心', 'enable_multi_select' => false]);
+        ProductOptionType::create(['name' => '點心', 'enable_multi_select' => true]);
     }
 }
