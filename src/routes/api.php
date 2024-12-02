@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\User\UserController;
+use App\Http\Controllers\User\CustomerController;
 use App\Http\Controllers\Product\ProductController;
 use App\Http\Controllers\Product\ProductCategoryController;
 use App\Http\Controllers\Product\ProductOptionTypeController;
@@ -21,6 +22,12 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::apiResource('users', UserController::class);
+
+Route::get('customer', [CustomerController::class, 'all']);
+Route::get('customer/{id}', [CustomerController::class, 'show']);
+Route::post('customer', [CustomerController::class, 'store']);
+Route::post('customer/{id}', [CustomerController::class, 'update']);
+Route::delete('customer', [CustomerController::class, 'destroy']);
 
 Route::get('products', [ProductController::class, 'all']);
 Route::get('products/{id}', [ProductController::class, 'show']);
