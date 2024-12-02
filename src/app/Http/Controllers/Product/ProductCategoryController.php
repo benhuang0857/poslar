@@ -13,22 +13,32 @@ class ProductCategoryController extends Controller
     public function all()
     {
         try {
-            $result = ProductCategory::with('products')->get();
+            $result = ProductCategory::with([
+                'products.optionTypes.optionValues' => function ($query) {
+                    $query->whereHas('products'); // 如果需要條件過濾可以在這裡加條件
+                }
+            ])->get();
+    
             return response()->json(['code' => 200, 'data' => ['list' => $result]]);
         } catch (\Exception $e) {
             return response()->json(['code' => 500, 'message' => $e->getMessage()], 500);
         }
     }
+    
 
     public function show(string $id)
     {
         try {
-            $productCategory = ProductCategory::with('products')->findOrFail($id);
+            $productCategory = ProductCategory::with([
+                'products.optionTypes.optionValues' // 加入嵌套關聯
+            ])->findOrFail($id);
+    
             return response()->json(['code' => 200, 'data' => $productCategory]);
         } catch (\Exception $e) {
             return response()->json(['code' => 404, 'message' => 'Resource not found'], 404);
         }
     }
+    
 
     public function store(Request $request)
     {
