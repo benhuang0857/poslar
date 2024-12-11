@@ -7,6 +7,7 @@ use App\Models\Order\Order;
 use App\Models\Order\OrderItem;
 use App\Models\Cart\Cart;
 use App\Models\Cart\CartItem;
+use App\Models\Product\Product;
 use App\Models\Product\ProductOptionValue;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -15,89 +16,20 @@ use DB;
 
 class OrderController extends Controller
 {
-    public function store(Request $request, $serial_number)
+    public function all()
     {
         try {
-            $validated = $request->validate([
-                'paid' => 'required|boolean',
-            ]);
+            $result = Order::with([
+                'user',
+                'customer',
+                'payment',
+                'promotion',
+                'dining_table',
+                'items.product',
+                'items.options',
+            ])->get();
 
-            $cart = Cart::where('serial_number', $serial_number)
-                        ->where('status', 'checked_out')
-                        ->firstOrFail();
-
-            // 檢查是否已有訂單
-            $orderExists = Order::where('serial_number', $cart->serial_number)->exists();
-
-            if ($orderExists) {
-                return response()->json([
-                    'code' => 400,
-                    'data' => 'Order with this serial number already exists.',
-                ], 400);
-            }
-
-            $options = CartItem::where('cart_id', $cart->id)->pluck('id')->toArray();
-
-            // 建立 Order
-            $order = new Order();
-            $order->user_id = $cart->user_id;
-            $order->serial_number = $cart->serial_number;
-            $order->customer_id = $cart->customer_id;
-            $order->dining_table_id = $cart->dining_table_id;
-            $order->payment_id = $cart->payment_id;
-            $order->promotion_id = $cart->promotion_id;
-            $order->total_price = $cart->total_price;
-            $order->final_price = $cart->final_price;
-            $order->paid = $request->paid;
-            $order->status = 'process';
-            $order->save();
-
-            // 複製 Cart Items 到 Order Items，並包含選項值
-            foreach ($cart->items as $cartItem) {
-
-                // 儲存 OrderItem
-                $orderItem = $order->items()->create([
-                    'product_id' => $cartItem->product_id,
-                    'quantity' => $cartItem->quantity,
-                    'price' => $cartItem->price
-                ]);
-
-                // 儲存 OrderItemProductOptionValues
-                $orderItem->options()->attach($options);
-            }
-
-            return response()->json([
-                'code' => 201,
-                'data' => [
-                    'message' => 'Create order successfully',
-                    'serial_number' => $order->serial_number,
-                ],
-            ], 201);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'code' => 500,
-                'data' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    public function update(Request $request, $serial_number) {
-        try {
-            $validated = $request->validate([
-                'paid' => 'required|boolean',
-                'status' => 'nullable|string'
-            ]);
-
-            $order = Order::where('serial_number', $serial_number)->firstOrFail();
-            $order->paid = $request->paid;
-            $order->status = isset($request->status) ?? $cart->status ;
-            $order->save();
-
-            return response()->json(['code' => http_response_code(), 'data' => [
-                'message' => 'Update order successfully',
-                'serial_number' => $order->serial_number
-            ]], 201);
+            return response()->json(['code' => http_response_code(), 'data' => ['list' => $result]]);
         } catch (Exception $e) {
             return response()->json(['code' => http_response_code(), 'data' => $e->getMessage()], 500);
         }
@@ -106,7 +38,7 @@ class OrderController extends Controller
     public function show($serial_number)
     {
         try {
-            $result = Cart::with([
+            $result = Order::with([
                 'user',
                 'customer',
                 'payment',
@@ -119,6 +51,153 @@ class OrderController extends Controller
             return response()->json(['code' => http_response_code(), 'data' => ['list' => $result]]);
         } catch (Exception $e) {
             return response()->json(['code' => http_response_code(), 'data' => $e->getMessage()], 500);
+        }
+    }
+
+    public function store(Request $request)
+    {
+        try {
+            // 驗證請求數據
+            $validated = $request->validate([
+                'user_id'           => 'required|integer|min:1',
+                'customer_id'       => 'nullable|integer|min:1',
+                'dining_table_id'   => 'nullable|integer|min:1',
+                'payment_id'        => 'nullable|integer|min:1',
+                'promotion_id'      => 'nullable|integer|min:1',
+                'paid'              => 'required|boolean',
+                'shipping'          => 'required|string',
+                'products'          => 'required|array',
+                'products.*.id'     => 'required|exists:products,id',
+                'products.*.quantity' => 'required|integer|min:1',
+                'products.*.options'  => 'array',
+                'products.*.options.*' => 'exists:product_option_values,id',
+            ]);
+
+            DB::beginTransaction();
+
+            // 創建訂單
+            $order = Order::create([
+                'serial_number'     => (new Order)->generateSerialNumber(),
+                'user_id'           => $validated['user_id'],
+                'customer_id'       => $validated['customer_id'] ?? null,
+                'dining_table_id'   => $validated['dining_table_id'] ?? null,
+                'payment_id'        => $validated['payment_id'] ?? null,
+                'promotion_id'      => $validated['promotion_id'] ?? null,
+                'total_price'       => 0,
+                'final_price'       => 0,
+                'paid'              => $validated['paid'],
+                'shipping'          => $validated['shipping'],
+            ]);
+
+            foreach ($validated['products'] as $productData) {
+                $product = Product::findOrFail($productData['id']);
+
+                if ($product->enable_stock && $product->stock < $productData['quantity']) {
+                    throw new Exception('Product "' . $product->name . '" is out of stock');
+                }
+
+                $productOptions = [];
+
+                if (!empty($productData['options'])) {
+                    $optionValues = ProductOptionValue::whereIn('id', $productData['options'])->get();
+
+                    foreach ($optionValues as $optionValue) {
+                        if ($optionValue->enable_stock && $optionValue->stock < $productData['quantity']) {
+                            throw new Exception('Option "' . $optionValue->value . '" is out of stock');
+                        }
+
+                        // Create order item for each option
+                        $orderItem = $order->items()->create([
+                            'product_id'   => $product->id,
+                            'quantity'     => $productData['quantity'],
+                            'price'        => $product->price * $productData['quantity'],
+                            'product_name' => $product->name, // Save the product name
+                            'product_option' => $optionValue->value
+                        ]);
+
+                        // Attach the selected option to the order item
+                        $orderItem->options()->attach($optionValue->id);
+                        $optionValue->decrement('stock', $productData['quantity']);
+
+                        // Store the option values as a string or JSON
+                        $productOptions[] = $optionValue->value;
+                    }
+                } else {
+                    // Create order item without options
+                    $orderItem = $order->items()->create([
+                        'product_id'   => $product->id,
+                        'quantity'     => $productData['quantity'],
+                        'price'        => $product->price * $productData['quantity'],
+                        'product_name' => $product->name, // Save the product name
+                    ]);
+                }
+
+                // Update the product's stock if necessary
+                if ($product->enable_stock) {
+                    $product->decrement('stock', $productData['quantity']);
+                }
+            }
+
+            // Calculate the total and final price
+            $order->calculateTotalPrice();
+            $order->calculateFinalPrice();
+
+            DB::commit();
+
+            return response()->json([
+                'code' => 201,
+                'data' => [
+                    'message' => 'Create order successfully',
+                    'serial_number' => $order->serial_number,
+                ],
+            ], 201);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'code' => 422,
+                'data' => $e->errors(),
+            ], 422);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'code' => 500,
+                'data' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function update(Request $request, $serial_number)
+    {
+        try {
+            // Validate the request data
+            $validated = $request->validate([
+                'paid'   => 'required|boolean',
+                'status' => 'nullable|string',
+            ]);
+    
+            // Find the order by serial number
+            $order = Order::where('serial_number', $serial_number)->firstOrFail();
+    
+            // Update the order fields
+            $order->paid = $validated['paid'];
+            $order->status = isset($validated['status']) ? $validated['status'] : $order->status;  // Use the current status if no new one is provided
+            $order->save();
+    
+            // Return a success response
+            return response()->json([
+                'code' => 200, // HTTP status code for success
+                'data' => [
+                    'message' => 'Update order successfully',
+                    'serial_number' => $order->serial_number,
+                ]
+            ], 200); // 200 OK
+    
+        } catch (Exception $e) {
+            // Return an error response
+            return response()->json([
+                'code' => 500, // Internal server error
+                'data' => $e->getMessage(),
+            ], 500); // 500 Internal Server Error
         }
     }
 
@@ -136,6 +215,49 @@ class OrderController extends Controller
             return response()->json(['code' => http_response_code(), 'data' => ['message' => 'Cart empty']], 204);
         } catch (Exception $e) {
             return response()->json(['code' => http_response_code(), 'data' => $e->getMessage()], 500);
+        }
+    }
+
+    public function get_kitch_today_order()
+    {
+        try {
+            $result = OrderItem::where('status', 'process')->get();
+
+            return response()->json(['code' => http_response_code(), 'data' => ['list' => $result]]);
+        } catch (Exception $e) {
+            return response()->json(['code' => http_response_code(), 'data' => $e->getMessage()], 500);
+        }
+    }
+
+    public function update_kitch_order(Request $request, $id) 
+    {
+        try {
+            // Validate the request data
+            $validated = $request->validate([
+                'status' => 'required|string',
+            ]);
+    
+            // Find the order by serial number
+            $orderItem = OrderItem::where('id', $id)->firstOrFail();
+    
+            // Update the order fields
+            $orderItem->status = $validated['status'];
+            $orderItem->save();
+    
+            // Return a success response
+            return response()->json([
+                'code' => 200, // HTTP status code for success
+                'data' => [
+                    'message' => 'Update order item successfully'
+                ]
+            ], 200); // 200 OK
+    
+        } catch (Exception $e) {
+            // Return an error response
+            return response()->json([
+                'code' => 500, // Internal server error
+                'data' => $e->getMessage(),
+            ], 500); // 500 Internal Server Error
         }
     }
 }

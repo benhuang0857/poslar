@@ -14,6 +14,16 @@ class Order extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'user_id',
+        'customer_id',
+        'dining_table_id',
+        'paid',
+        'total_price',
+        'final_price',
+        'serial_number',
+    ];
+
     public function items()
     {
         return $this->hasMany(OrderItem::class);
@@ -42,5 +52,31 @@ class Order extends Model
     public function promotion()
     {
         return $this->belongsTo(Promotion::class);
+    }
+
+    public function calculateTotalPrice()
+    {
+        $this->total_price = $this->items->sum(function ($item) {
+            return $item->price;
+        });
+        $this->save();
+    }
+
+    public function calculateFinalPrice()
+    {
+        $promotion = $this->promotion;
+
+        $discount = $promotion ? $promotion->discount : 1;
+        $this->final_price = $this->total_price * $discount;
+
+        $this->save();
+    }
+
+    public function generateSerialNumber()
+    {
+        $date = now()->format('YmdHis');
+        $count = self::whereDate('created_at', now()->toDateString())->count() + 1;
+
+        return $date . str_pad($count, 3, '0', STR_PAD_LEFT);
     }
 }

@@ -22,6 +22,7 @@ return new class extends Migration
             $table->decimal('total_price', 10, 2);
             $table->decimal('final_price', 10, 2);
             $table->boolean('paid')->default(false);
+            $table->string('shipping')->nullable();
             $table->enum('status', ['process', 'pending', 'completed', 'cancelled', 'delivered'])->default('process');
             $table->timestamps();
         });
@@ -31,6 +32,8 @@ return new class extends Migration
             $table->unsignedBigInteger('order_id');
             $table->unsignedBigInteger('product_id');
             $table->integer('quantity')->default(1);
+            $table->string('product_name')->nullable();
+            $table->string('product_option')->nullable();
             $table->decimal('price', 10, 2);
             $table->enum('status', ['process', 'pending', 'completed', 'cancelled', 'delivered'])->default('process');
             $table->timestamps();

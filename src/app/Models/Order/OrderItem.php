@@ -18,6 +18,8 @@ class OrderItem extends Model
         'price',
         'status',
         'items',
+        'product_name',
+        'product_option',
     ];
 
     public function order()
