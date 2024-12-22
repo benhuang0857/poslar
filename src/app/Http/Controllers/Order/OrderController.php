@@ -250,7 +250,15 @@ class OrderController extends Controller
     public function get_kitch_today_order()
     {
         try {
-            $result = OrderItem::where('status', 'process')->get();
+            $result = Order::with([
+                'user',
+                'customer',
+                'payment',
+                'promotion',
+                'dining_table',
+                'items.product',
+                'items.options',
+            ])->get();
 
             return response()->json(['code' => http_response_code(), 'data' => ['list' => $result]]);
         } catch (Exception $e) {
