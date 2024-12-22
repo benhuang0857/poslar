@@ -4,10 +4,11 @@ namespace App\Models\Product;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'products';
 
@@ -22,6 +23,8 @@ class Product extends Model
         'description',
         'status',
     ];
+
+    const DELETED_AT = 'deleted_at';
 
     public function optionTypes()
     {

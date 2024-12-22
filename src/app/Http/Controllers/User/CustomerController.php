@@ -81,14 +81,33 @@ class CustomerController extends Controller
         }
     }
 
-    public function destroy($id)
+    public function destroy(Request $request)
     {
         try {
-            $customer = Customer::findOrFail($id);
-            $customer->delete();
+            $validator = Validator::make($request->all(), [
+                'ids' => 'required|array|min:1',
+                'ids.*' => 'integer|exists:customers,id',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'code' => 422,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $ids = $request->input('ids');
+            Customer::whereIn('id', $ids)->delete();
+
             return response()->json(null, 204);
         } catch (Exception $e) {
-            return response()->json(['code' => 404, 'message' => 'Customer not found', 'error' => $e->getMessage()]);
+            return response()->json([
+                'code' => 500,
+                'message' => 'An error occurred',
+                'error' => $e->getMessage(),
+            ], 500);
         }
     }
+
 }

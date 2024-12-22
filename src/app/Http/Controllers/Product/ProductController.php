@@ -171,17 +171,39 @@ class ProductController extends Controller
     public function destroy(Request $request)
     {
         try {
-            $validated = $request->validate([
-                'ids' => 'required|array',
-                'ids.*' => 'required|integer'
+            $validator = Validator::make($request->all(), [
+                'ids' => 'required|array|min:1',
+                'ids.*' => 'integer|exists:products,id',
             ]);
-
+    
+            if ($validator->fails()) {
+                return response()->json([
+                    'code' => 422,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+    
             $ids = $request->input('ids');
-            Product::whereIn('id', $ids)->delete();
-            
-            return response()->json(['code' => http_response_code(), 'data' => ['message' => 'Success']], 204); // 返回204狀態碼
+    
+            // 查詢並刪除商品及其關聯數據
+            $products = Product::whereIn('id', $ids)->get();
+    
+            foreach ($products as $product) {
+                // 刪除與 product_option_types_products 的關聯
+                $product->optionTypes()->detach();
+                // 刪除商品
+                $product->delete();
+            }
+    
+            return response()->json(null, 204); // 成功刪除
         } catch (Exception $e) {
-            return response()->json(['code' => http_response_code(), 'data' => $e->getMessage()], 500);
+            return response()->json([
+                'code' => 500,
+                'message' => 'An error occurred',
+                'error' => $e->getMessage(),
+            ], 500);
         }
     }
+    
 }

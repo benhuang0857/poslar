@@ -11,9 +11,14 @@ use Illuminate\Support\Facades\Validator;
 class UserController extends Controller
 {
 
-    public function index()
+    public function all()
     {
-        return response()->json(User::all(), 200);
+        try {
+            $users = User::all();
+            return response()->json(['code' => 200, 'data' => $users]);
+        } catch (Exception $e) {
+            return response()->json(['code' => 500, 'message' => 'Failed to fetch users', 'error' => $e->getMessage()]);
+        }
     }
 
     public function store(Request $request)
@@ -73,16 +78,33 @@ class UserController extends Controller
         return response()->json($user, 200);
     }
 
-    public function destroy($id)
+    public function destroy(Request $request)
     {
-        $user = User::find($id);
+        $validator = Validator::make($request->all(), [
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:users,id',
+        ]);
 
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
         }
 
-        $user->delete();
+        $ids = $request->input('ids');
+    
+        if (empty($ids) || !is_array($ids)) {
+            return response()->json(['message' => 'No valid user IDs provided'], 400);
+        }
 
-        return response()->json(['message' => 'User deleted successfully'], 200);
+        $users = User::whereIn('id', $ids)->get();
+    
+        if ($users->isEmpty()) {
+            return response()->json(['message' => 'No matching users found'], 404);
+        }
+
+        foreach ($users as $user) {
+            $user->delete();
+        }
+    
+        return response()->json(['message' => 'Users deleted successfully'], 200);
     }
 }

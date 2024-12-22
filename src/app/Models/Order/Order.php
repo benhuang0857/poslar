@@ -9,10 +9,11 @@ use App\Models\Store\Payment;
 use App\Models\Store\Promotion;
 use App\Models\User;
 use App\Models\Customer;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Order extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'user_id',
@@ -23,6 +24,8 @@ class Order extends Model
         'final_price',
         'serial_number',
     ];
+
+    const DELETED_AT = 'deleted_at';
 
     public function items()
     {

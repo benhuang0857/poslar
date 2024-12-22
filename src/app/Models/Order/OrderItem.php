@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Product\Product;
 use App\Models\Product\ProductOptionValue;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class OrderItem extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'order_id',
@@ -21,6 +22,8 @@ class OrderItem extends Model
         'product_name',
         'product_option',
     ];
+
+    const DELETED_AT = 'deleted_at';
 
     public function order()
     {

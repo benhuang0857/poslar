@@ -60,15 +60,32 @@ class ProductOptionTypeController extends Controller
         }
     }
 
-    public function destroy(string $id)
+    public function destroy(Request $request)
     {
         try {
-            $productOptionType = ProductOptionType::findOrFail($id);
-            $productOptionType->delete();
+            $validator = Validator::make($request->all(), [
+                'ids' => 'required|array|min:1',
+                'ids.*' => 'integer|exists:dining_tables,id',
+            ]);
 
-            return response()->json(['code' => 204, 'message' => 'Deleted successfully']);
-        } catch (\Exception $e) {
-            return response()->json(['code' => 404, 'message' => 'Resource not found'], 404);
+            if ($validator->fails()) {
+                return response()->json([
+                    'code' => 422,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $ids = $request->input('ids');
+            ProductOptionType::whereIn('id', $ids)->delete();
+            
+            return response()->json(null, 204);
+        } catch (Exception $e) {
+            return response()->json([
+                'code' => 500,
+                'message' => 'An error occurred',
+                'error' => $e->getMessage(),
+            ], 500);
         }
     }
 }

@@ -201,23 +201,52 @@ class OrderController extends Controller
         }
     }
 
-    public function destroy($id)
+    public function destroy(Request $request)
     {
         try {
-            $order = Order::where('user_id', $id)->first();
+            $validated = $request->validate([
+                'ids' => 'required|array|min:1',
+                'ids.*' => 'integer|exists:users,id',
+            ]);
 
-            if ($order) {
+            $userIds = $validated['ids'];
+
+            $orders = Order::whereIn('user_id', $userIds)->get();
+    
+            if ($orders->isEmpty()) {
+                return response()->json([
+                    'code' => 404,
+                    'data' => ['message' => 'No orders found for the given user IDs'],
+                ], 404);
+            }
+    
+            foreach ($orders as $order) {
                 $order->items()->delete();
+
                 $order->total_price = 0;
                 $order->save();
             }
-
-            return response()->json(['code' => http_response_code(), 'data' => ['message' => 'Cart empty']], 204);
+    
+            return response()->json([
+                'code' => 204,
+                'data' => ['message' => 'Orders emptied successfully'],
+            ], 204);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'code' => 422,
+                'data' => [
+                    'message' => 'Validation failed',
+                    'errors' => $e->errors(),
+                ],
+            ], 422);
         } catch (Exception $e) {
-            return response()->json(['code' => http_response_code(), 'data' => $e->getMessage()], 500);
+            return response()->json([
+                'code' => 500,
+                'data' => ['message' => 'An error occurred', 'error' => $e->getMessage()],
+            ], 500);
         }
     }
-
+    
     public function get_kitch_today_order()
     {
         try {
