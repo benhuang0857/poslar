@@ -45,4 +45,10 @@ class Product extends Model
     {
         return $this->belongsToMany(ProductCategory::class, 'product_category_relation');
     }
+
+    public function getFeatureImageAttribute($value)
+    {
+        $domain = config('app.url');
+        return $value ? "{$domain}/" . str_replace('public/', '', $value) : null;
+    }
 }
