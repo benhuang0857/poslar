@@ -36,7 +36,7 @@ class DiningTableController extends Controller
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
-                'quantity' => 'nullable|interger|min:0',
+                'quantity' => 'nullable|integer|min:0',
                 'qrcode' => 'nullable|string|max:255',
                 'description' => 'nullable|string',
                 'status' => 'required|boolean',
@@ -55,7 +55,7 @@ class DiningTableController extends Controller
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
-                'quantity' => 'nullable|interger|min:0',
+                'quantity' => 'nullable|integer|min:0',
                 'qrcode' => 'nullable|string|max:255',
                 'description' => 'nullable|string',
                 'status' => 'required|boolean',
@@ -75,7 +75,7 @@ class DiningTableController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'ids' => 'required|array|min:1',
-                'ids.*' => 'integer|exists:dining_tables,id',
+                'ids.*' => 'integer|exists:dining_table,id',
             ]);
 
             if ($validator->fails()) {

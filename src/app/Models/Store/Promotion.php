@@ -12,5 +12,14 @@ class Promotion extends Model
 
     protected $table = 'promotion';
 
+    protected $fillable = [
+        'name',
+        'description',
+        'discount',
+        'start_time',
+        'end_time',
+        'status',
+    ];
+
     const DELETED_AT = 'deleted_at';
 }

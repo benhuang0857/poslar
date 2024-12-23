@@ -12,5 +12,13 @@ class DiningTable extends Model
 
     protected $table = 'dining_table';
 
+    protected $fillable = [
+        'name',
+        'quantity',
+        'qrcode',
+        'description',
+        'status',
+    ];
+
     const DELETED_AT = 'deleted_at';
 }

@@ -12,5 +12,11 @@ class Payment extends Model
 
     protected $table = 'payment';
 
+    protected $fillable = [
+        'name',
+        'description',
+        'status',
+    ];
+
     const DELETED_AT = 'deleted_at';
 }

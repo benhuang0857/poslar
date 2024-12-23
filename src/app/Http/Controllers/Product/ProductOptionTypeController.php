@@ -65,7 +65,7 @@ class ProductOptionTypeController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'ids' => 'required|array|min:1',
-                'ids.*' => 'integer|exists:dining_tables,id',
+                'ids.*' => 'integer',
             ]);
 
             if ($validator->fails()) {

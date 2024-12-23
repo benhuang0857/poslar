@@ -77,7 +77,7 @@ class PromotionController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'ids' => 'required|array|min:1',
-                'ids.*' => 'integer|exists:dining_tables,id',
+                'ids.*' => 'integer|exists:promotion,id',
             ]);
 
             if ($validator->fails()) {

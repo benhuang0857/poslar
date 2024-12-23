@@ -12,5 +12,14 @@ class Customer extends Model
 
     protected $table = 'customers';
 
+    protected $fillable = [
+        'name',
+        'mobile',
+        'password',
+        'email',
+        'line_id',
+        'birthday',
+    ];
+
     const DELETED_AT = 'deleted_at';
 }
