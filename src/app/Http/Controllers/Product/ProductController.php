@@ -53,6 +53,184 @@ class ProductController extends Controller
         }
     }
 
+    /** Normal without base64 */ 
+    // public function store(Request $request)
+    // {
+    //     try {
+    //         $validated = $request->validate([
+    //             'name' => 'required|string|max:255',
+    //             'enable_adv_sku' => 'nullable|boolean',
+    //             'sku' => 'nullable|string|max:255',
+    //             'feature_image' => 'nullable|string|max:255',
+    //             'price' => 'required|numeric|min:0',
+    //             'enable_stock' => 'required|boolean',
+    //             'stock' => 'nullable|integer|min:0',
+    //             'description' => 'nullable|string',
+    //             'status' => 'required|boolean',
+    //             'option_types_with_option_value' => 'nullable|array',
+    //             'categories' => 'nullable|array',
+    //         ]);
+    
+    //         if ($request->hasFile('feature_image')) {
+    //             $image = $request->file('feature_image');
+    //             $imagePath = $image->store('public/images'); // Save image in the 'public/images' directory
+    //             $validated['feature_image'] = $imagePath; // Store the path in the database
+    //         }
+    
+    //         $product = Product::create($validated);
+    
+    //         // Process option_types_with_option_value
+    //         if (isset($request->option_types_with_option_value)) {
+    //             foreach ($request->option_types_with_option_value as $optionTypeWithValues) {
+    //                 // Handle image upload for option type
+    //                 $optionTypeImagePath = null;
+    //                 if (isset($optionTypeWithValues['image']) && $optionTypeWithValues['image'] instanceof \Illuminate\Http\UploadedFile) {
+    //                     $optionTypeImagePath = $optionTypeWithValues['image']->store('public/option_types');
+    //                 }
+    
+    //                 // Find or create the option type
+    //                 $optionType = ProductOptionType::firstOrCreate([
+    //                     'name' => $optionTypeWithValues['option_type_name'],
+    //                 ], [
+    //                     'image' => $optionTypeImagePath,
+    //                     'enable_multi_select' => $optionTypeWithValues['enable_multi_select'] ?? false,
+    //                 ]);
+    
+    //                 // Attach the option type to the product
+    //                 $product->optionTypes()->attach($optionType->id);
+    
+    //                 // Process option values
+    //                 if (isset($optionTypeWithValues['option_values'])) {
+    //                     foreach ($optionTypeWithValues['option_values'] as $optionValue) {
+    //                         // Handle image upload for option value
+    //                         $optionValueImagePath = null;
+    //                         if (isset($optionValue['image']) && $optionValue['image'] instanceof \Illuminate\Http\UploadedFile) {
+    //                             $optionValueImagePath = $optionValue['image']->store('public/option_values');
+    //                         }
+    
+    //                         // Find or create the option value using 'value' as a key
+    //                         $optionValueModel = ProductOptionValue::firstOrCreate([
+    //                             'product_option_type_id' => $optionType->id,
+    //                             'value' => $optionValue['value'],
+    //                         ], [
+    //                             'enable_stock' => $optionValue['enable_stock'] ?? false,
+    //                             'stock' => $optionValue['stock'] ?? -999,
+    //                             'enable_price' => $optionValue['enable_price'] ?? false,
+    //                             'price' => $optionValue['price'] ?? 0,
+    //                             'image' => $optionValueImagePath,
+    //                         ]);
+    
+    //                         // Attach the option value to the product
+    //                         $product->optionValues()->attach($optionValueModel->id);
+    //                     }
+    //                 }
+    //             }
+    //         }
+    
+    //         // Attach categories
+    //         if (isset($request->categories)) {
+    //             $product->categories()->attach($request->categories);
+    //         }
+    
+    //         return response()->json(['code' => http_response_code(), 'data' => ['message' => 'Success']], 201); // 返回201狀態碼
+    //     } catch (Exception $e) {
+    //         return response()->json(['code' => http_response_code(), 'data' => $e->getMessage()], 500);
+    //     }
+    // }
+
+    // public function update($id, Request $request)
+    // {
+    //     try {
+    //         $validated = $request->validate([
+    //             'name' => 'required|string|max:255',
+    //             'enable_adv_sku' => 'nullable|boolean',
+    //             'sku' => 'nullable|string|max:255',
+    //             'feature_image' => 'nullable|string|max:255',
+    //             'price' => 'required|numeric|min:0',
+    //             'enable_stock' => 'required|boolean',
+    //             'stock' => 'nullable|integer|min:0',
+    //             'description' => 'nullable|string',
+    //             'status' => 'required|boolean',
+    //             'option_types_with_option_value' => 'nullable|array',
+    //             'categories' => 'nullable|array',
+    //         ]);
+    
+    //         $product = Product::findOrFail($id);
+    
+    //         // Handle feature image upload
+    //         if ($request->hasFile('feature_image')) {
+    //             $image = $request->file('feature_image');
+    //             $imagePath = $image->store('public/images');
+    //             $validated['feature_image'] = $imagePath;
+    //         }
+    
+    //         // Update product details
+    //         $product->update($validated);
+    
+    //         // Update option types and values
+    //         if (isset($request->option_types_with_option_value)) {
+    //             $optionTypeIds = [];
+    //             $optionValueIds = [];
+    
+    //             foreach ($request->option_types_with_option_value as $optionTypeWithValues) {
+    //                 // Handle option type image upload
+    //                 $optionTypeImagePath = null;
+    //                 if (isset($optionTypeWithValues['image']) && $optionTypeWithValues['image'] instanceof \Illuminate\Http\UploadedFile) {
+    //                     $optionTypeImagePath = $optionTypeWithValues['image']->store('public/option_types');
+    //                 }
+    
+    //                 // Find or create option type
+    //                 $optionType = ProductOptionType::firstOrCreate([
+    //                     'name' => $optionTypeWithValues['option_type_name'],
+    //                 ], [
+    //                     'image' => $optionTypeImagePath,
+    //                     'enable_multi_select' => $optionTypeWithValues['enable_multi_select'] ?? false,
+    //                 ]);
+    
+    //                 $optionTypeIds[] = $optionType->id;
+    
+    //                 // Handle option values
+    //                 if (isset($optionTypeWithValues['option_values'])) {
+    //                     foreach ($optionTypeWithValues['option_values'] as $optionValue) {
+    //                         // Handle option value image upload
+    //                         $optionValueImagePath = null;
+    //                         if (isset($optionValue['image']) && $optionValue['image'] instanceof \Illuminate\Http\UploadedFile) {
+    //                             $optionValueImagePath = $optionValue['image']->store('public/option_values');
+    //                         }
+    
+    //                         // Find or create option value
+    //                         $optionValueModel = ProductOptionValue::firstOrCreate([
+    //                             'product_option_type_id' => $optionType->id,
+    //                             'value' => $optionValue['value'],
+    //                         ], [
+    //                             'enable_stock' => $optionValue['enable_stock'] ?? false,
+    //                             'stock' => $optionValue['stock'] ?? -999,
+    //                             'enable_price' => $optionValue['enable_price'] ?? false,
+    //                             'price' => $optionValue['price'] ?? 0,
+    //                             'image' => $optionValueImagePath,
+    //                         ]);
+    
+    //                         $optionValueIds[] = $optionValueModel->id;
+    //                     }
+    //                 }
+    //             }
+    
+    //             // Sync option types and values
+    //             $product->optionTypes()->sync($optionTypeIds);
+    //             $product->optionValues()->sync($optionValueIds);
+    //         }
+    
+    //         // Update categories
+    //         if (isset($request->categories)) {
+    //             $product->categories()->sync($request->categories);
+    //         }
+    
+    //         return response()->json(['code' => http_response_code(), 'data' => ['message' => 'Success']]);
+    //     } catch (Exception $e) {
+    //         return response()->json(['code' => http_response_code(), 'data' => $e->getMessage()], 500);
+    //     }
+    // }
+
     public function store(Request $request)
     {
         try {
@@ -60,7 +238,7 @@ class ProductController extends Controller
                 'name' => 'required|string|max:255',
                 'enable_adv_sku' => 'nullable|boolean',
                 'sku' => 'nullable|string|max:255',
-                'feature_image' => 'nullable|string|max:255',
+                'feature_image' => 'nullable|string',
                 'price' => 'required|numeric|min:0',
                 'enable_stock' => 'required|boolean',
                 'stock' => 'nullable|integer|min:0',
@@ -69,24 +247,23 @@ class ProductController extends Controller
                 'option_types_with_option_value' => 'nullable|array',
                 'categories' => 'nullable|array',
             ]);
-    
-            if ($request->hasFile('feature_image')) {
-                $image = $request->file('feature_image');
-                $imagePath = $image->store('public/images'); // Save image in the 'public/images' directory
-                $validated['feature_image'] = $imagePath; // Store the path in the database
+
+            // 處理 Base64 Feature Image
+            if (isset($validated['feature_image']) && $this->isBase64($validated['feature_image'])) {
+                $validated['feature_image'] = $this->saveBase64Image($validated['feature_image'], 'public/images');
             }
-    
+
             $product = Product::create($validated);
-    
+
             // Process option_types_with_option_value
             if (isset($request->option_types_with_option_value)) {
                 foreach ($request->option_types_with_option_value as $optionTypeWithValues) {
-                    // Handle image upload for option type
+                    // Handle Base64 image for option type
                     $optionTypeImagePath = null;
-                    if (isset($optionTypeWithValues['image']) && $optionTypeWithValues['image'] instanceof \Illuminate\Http\UploadedFile) {
-                        $optionTypeImagePath = $optionTypeWithValues['image']->store('public/option_types');
+                    if (isset($optionTypeWithValues['image']) && $this->isBase64($optionTypeWithValues['image'])) {
+                        $optionTypeImagePath = $this->saveBase64Image($optionTypeWithValues['image'], 'public/option_types');
                     }
-    
+
                     // Find or create the option type
                     $optionType = ProductOptionType::firstOrCreate([
                         'name' => $optionTypeWithValues['option_type_name'],
@@ -94,19 +271,19 @@ class ProductController extends Controller
                         'image' => $optionTypeImagePath,
                         'enable_multi_select' => $optionTypeWithValues['enable_multi_select'] ?? false,
                     ]);
-    
+
                     // Attach the option type to the product
                     $product->optionTypes()->attach($optionType->id);
-    
+
                     // Process option values
                     if (isset($optionTypeWithValues['option_values'])) {
                         foreach ($optionTypeWithValues['option_values'] as $optionValue) {
-                            // Handle image upload for option value
+                            // Handle Base64 image for option value
                             $optionValueImagePath = null;
-                            if (isset($optionValue['image']) && $optionValue['image'] instanceof \Illuminate\Http\UploadedFile) {
-                                $optionValueImagePath = $optionValue['image']->store('public/option_values');
+                            if (isset($optionValue['image']) && $this->isBase64($optionValue['image'])) {
+                                $optionValueImagePath = $this->saveBase64Image($optionValue['image'], 'public/option_values');
                             }
-    
+
                             // Find or create the option value using 'value' as a key
                             $optionValueModel = ProductOptionValue::firstOrCreate([
                                 'product_option_type_id' => $optionType->id,
@@ -118,25 +295,25 @@ class ProductController extends Controller
                                 'price' => $optionValue['price'] ?? 0,
                                 'image' => $optionValueImagePath,
                             ]);
-    
+
                             // Attach the option value to the product
                             $product->optionValues()->attach($optionValueModel->id);
                         }
                     }
                 }
             }
-    
+
             // Attach categories
             if (isset($request->categories)) {
                 $product->categories()->attach($request->categories);
             }
-    
+
             return response()->json(['code' => http_response_code(), 'data' => ['message' => 'Success']], 201); // 返回201狀態碼
         } catch (Exception $e) {
             return response()->json(['code' => http_response_code(), 'data' => $e->getMessage()], 500);
         }
     }
-    
+
     public function update($id, Request $request)
     {
         try {
@@ -144,7 +321,7 @@ class ProductController extends Controller
                 'name' => 'required|string|max:255',
                 'enable_adv_sku' => 'nullable|boolean',
                 'sku' => 'nullable|string|max:255',
-                'feature_image' => 'nullable|string|max:255',
+                'feature_image' => 'nullable|string', // 支持 Base64 圖片
                 'price' => 'required|numeric|min:0',
                 'enable_stock' => 'required|boolean',
                 'stock' => 'nullable|integer|min:0',
@@ -156,11 +333,14 @@ class ProductController extends Controller
     
             $product = Product::findOrFail($id);
     
-            // Handle feature image upload
-            if ($request->hasFile('feature_image')) {
-                $image = $request->file('feature_image');
-                $imagePath = $image->store('public/images');
-                $validated['feature_image'] = $imagePath;
+            // Handle feature image upload (support Base64)
+            if (isset($validated['feature_image'])) {
+                if ($this->isBase64($validated['feature_image'])) {
+                    $validated['feature_image'] = $this->saveBase64Image($validated['feature_image'], 'public/images');
+                } elseif ($request->hasFile('feature_image')) {
+                    $image = $request->file('feature_image');
+                    $validated['feature_image'] = $image->store('public/images');
+                }
             }
     
             // Update product details
@@ -172,10 +352,14 @@ class ProductController extends Controller
                 $optionValueIds = [];
     
                 foreach ($request->option_types_with_option_value as $optionTypeWithValues) {
-                    // Handle option type image upload
+                    // Handle option type image upload (support Base64)
                     $optionTypeImagePath = null;
-                    if (isset($optionTypeWithValues['image']) && $optionTypeWithValues['image'] instanceof \Illuminate\Http\UploadedFile) {
-                        $optionTypeImagePath = $optionTypeWithValues['image']->store('public/option_types');
+                    if (isset($optionTypeWithValues['image'])) {
+                        if ($this->isBase64($optionTypeWithValues['image'])) {
+                            $optionTypeImagePath = $this->saveBase64Image($optionTypeWithValues['image'], 'public/option_types');
+                        } elseif ($optionTypeWithValues['image'] instanceof \Illuminate\Http\UploadedFile) {
+                            $optionTypeImagePath = $optionTypeWithValues['image']->store('public/option_types');
+                        }
                     }
     
                     // Find or create option type
@@ -191,10 +375,14 @@ class ProductController extends Controller
                     // Handle option values
                     if (isset($optionTypeWithValues['option_values'])) {
                         foreach ($optionTypeWithValues['option_values'] as $optionValue) {
-                            // Handle option value image upload
+                            // Handle option value image upload (support Base64)
                             $optionValueImagePath = null;
-                            if (isset($optionValue['image']) && $optionValue['image'] instanceof \Illuminate\Http\UploadedFile) {
-                                $optionValueImagePath = $optionValue['image']->store('public/option_values');
+                            if (isset($optionValue['image'])) {
+                                if ($this->isBase64($optionValue['image'])) {
+                                    $optionValueImagePath = $this->saveBase64Image($optionValue['image'], 'public/option_values');
+                                } elseif ($optionValue['image'] instanceof \Illuminate\Http\UploadedFile) {
+                                    $optionValueImagePath = $optionValue['image']->store('public/option_values');
+                                }
                             }
     
                             // Find or create option value
@@ -267,5 +455,43 @@ class ProductController extends Controller
             ], 500);
         }
     }
+
+    private function isBase64($string)
+    {
+        // 檢查是否符合 Base64 圖片的正則表達式格式
+        return (bool) preg_match('/^data:image\/[a-zA-Z]+;base64,/', $string);
+    }
+
+    private function saveBase64Image($base64Image, $path)
+    {
+        // 檢查是否為有效的 Base64 編碼
+        if (!$this->isBase64($base64Image)) {
+            throw new \Exception('Invalid Base64 image format.');
+        }
+
+        // 提取圖片格式
+        preg_match('/^data:image\/(\w+);base64,/', $base64Image, $matches);
+        $extension = $matches[1] ?? 'png'; // 默認擴展名為 png
+
+        // 解碼 Base64
+        $imageData = base64_decode(preg_replace('/^data:image\/\w+;base64,/', '', $base64Image));
+
+        // 確保目錄存在
+        $storagePath = storage_path("app/{$path}");
+        if (!file_exists($storagePath)) {
+            mkdir($storagePath, 0777, true);
+        }
+
+        // 生成唯一文件名
+        $fileName = uniqid() . '.' . $extension;
+        $filePath = "{$path}/{$fileName}";
+
+        // 保存圖片
+        file_put_contents(storage_path("app/{$filePath}"), $imageData);
+
+        // 返回路徑（相對於 storage/app/public）
+        return str_replace('public/', 'storage/', $filePath);
+    }
+
     
 }
