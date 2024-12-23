@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Product;
 use App\Http\Controllers\Controller;
 use App\Models\Product\Product;
 use App\Models\Product\ProductOptionType;
+use App\Models\Product\ProductOptionValue;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Exception;
@@ -65,53 +66,77 @@ class ProductController extends Controller
                 'stock' => 'nullable|integer|min:0',
                 'description' => 'nullable|string',
                 'status' => 'required|boolean',
-                'option_types' => 'nullable|array',
-                'option_values' => 'nullable|array',
+                'option_types_with_option_value' => 'nullable|array',
                 'categories' => 'nullable|array',
             ]);
-
+    
             if ($request->hasFile('feature_image')) {
                 $image = $request->file('feature_image');
                 $imagePath = $image->store('public/images'); // Save image in the 'public/images' directory
                 $validated['feature_image'] = $imagePath; // Store the path in the database
-            }    
+            }
     
             $product = Product::create($validated);
-
-            if (isset($request->option_types)) {
-                $product->optionTypes()->attach($request->option_types);
-            }
-
-            if (isset($request->option_values) && isset($request->option_values)) {
-                foreach ($request->option_values as $optionValueId) {
-                    $product->optionValues()->attach($optionValueId);
+    
+            // Process option_types_with_option_value
+            if (isset($request->option_types_with_option_value)) {
+                foreach ($request->option_types_with_option_value as $optionTypeWithValues) {
+                    // Handle image upload for option type
+                    $optionTypeImagePath = null;
+                    if (isset($optionTypeWithValues['image']) && $optionTypeWithValues['image'] instanceof \Illuminate\Http\UploadedFile) {
+                        $optionTypeImagePath = $optionTypeWithValues['image']->store('public/option_types');
+                    }
+    
+                    // Find or create the option type
+                    $optionType = ProductOptionType::firstOrCreate([
+                        'name' => $optionTypeWithValues['option_type_name'],
+                    ], [
+                        'image' => $optionTypeImagePath,
+                        'enable_multi_select' => $optionTypeWithValues['enable_multi_select'] ?? false,
+                    ]);
+    
+                    // Attach the option type to the product
+                    $product->optionTypes()->attach($optionType->id);
+    
+                    // Process option values
+                    if (isset($optionTypeWithValues['option_values'])) {
+                        foreach ($optionTypeWithValues['option_values'] as $optionValue) {
+                            // Handle image upload for option value
+                            $optionValueImagePath = null;
+                            if (isset($optionValue['image']) && $optionValue['image'] instanceof \Illuminate\Http\UploadedFile) {
+                                $optionValueImagePath = $optionValue['image']->store('public/option_values');
+                            }
+    
+                            // Find or create the option value using 'value' as a key
+                            $optionValueModel = ProductOptionValue::firstOrCreate([
+                                'product_option_type_id' => $optionType->id,
+                                'value' => $optionValue['value'],
+                            ], [
+                                'enable_stock' => $optionValue['enable_stock'] ?? false,
+                                'stock' => $optionValue['stock'] ?? -999,
+                                'enable_price' => $optionValue['enable_price'] ?? false,
+                                'price' => $optionValue['price'] ?? 0,
+                                'image' => $optionValueImagePath,
+                            ]);
+    
+                            // Attach the option value to the product
+                            $product->optionValues()->attach($optionValueModel->id);
+                        }
+                    }
                 }
             }
-
-            if(isset($request->option_types) && !isset($request->option_values)) {
-                $optionValueIds = ProductOptionType::whereIn('id', $request->option_types)
-                                        ->with('optionValues')
-                                        ->get()
-                                        ->pluck('optionValues.*.id')
-                                        ->flatten()
-                                        ->toArray();
-                foreach ($optionValueIds as $id) {
-                    $product->optionValues()->attach($id);
-                }
-            } 
-
+    
+            // Attach categories
             if (isset($request->categories)) {
-                foreach ($request->categories as $id) {
-                    $product->categories()->attach($id);
-                }
+                $product->categories()->attach($request->categories);
             }
-            
+    
             return response()->json(['code' => http_response_code(), 'data' => ['message' => 'Success']], 201); // 返回201狀態碼
         } catch (Exception $e) {
             return response()->json(['code' => http_response_code(), 'data' => $e->getMessage()], 500);
         }
     }
-
+    
     public function update($id, Request $request)
     {
         try {
@@ -125,49 +150,86 @@ class ProductController extends Controller
                 'stock' => 'nullable|integer|min:0',
                 'description' => 'nullable|string',
                 'status' => 'required|boolean',
-                'option_types' => 'nullable|array',
-                'option_values' => 'nullable|array',
+                'option_types_with_option_value' => 'nullable|array',
                 'categories' => 'nullable|array',
             ]);
-
+    
             $product = Product::findOrFail($id);
-
+    
+            // Handle feature image upload
             if ($request->hasFile('feature_image')) {
                 $image = $request->file('feature_image');
                 $imagePath = $image->store('public/images');
                 $validated['feature_image'] = $imagePath;
             }
-
+    
+            // Update product details
             $product->update($validated);
-
-            if (isset($request->option_types)) {
-                $product->optionTypes()->sync($request->option_types);
-            }
-
-            if (isset($request->option_types) && isset($request->option_values)) {
-                $product->optionValues()->sync($request->option_values);
-            }
-
-            if(isset($request->option_types) && !isset($request->option_values)) {
-                $optionValueIds = ProductOptionType::whereIn('id', $request->option_types)
-                                        ->with('optionValues')
-                                        ->get()
-                                        ->pluck('optionValues.*.id')
-                                        ->flatten()
-                                        ->toArray();
+    
+            // Update option types and values
+            if (isset($request->option_types_with_option_value)) {
+                $optionTypeIds = [];
+                $optionValueIds = [];
+    
+                foreach ($request->option_types_with_option_value as $optionTypeWithValues) {
+                    // Handle option type image upload
+                    $optionTypeImagePath = null;
+                    if (isset($optionTypeWithValues['image']) && $optionTypeWithValues['image'] instanceof \Illuminate\Http\UploadedFile) {
+                        $optionTypeImagePath = $optionTypeWithValues['image']->store('public/option_types');
+                    }
+    
+                    // Find or create option type
+                    $optionType = ProductOptionType::firstOrCreate([
+                        'name' => $optionTypeWithValues['option_type_name'],
+                    ], [
+                        'image' => $optionTypeImagePath,
+                        'enable_multi_select' => $optionTypeWithValues['enable_multi_select'] ?? false,
+                    ]);
+    
+                    $optionTypeIds[] = $optionType->id;
+    
+                    // Handle option values
+                    if (isset($optionTypeWithValues['option_values'])) {
+                        foreach ($optionTypeWithValues['option_values'] as $optionValue) {
+                            // Handle option value image upload
+                            $optionValueImagePath = null;
+                            if (isset($optionValue['image']) && $optionValue['image'] instanceof \Illuminate\Http\UploadedFile) {
+                                $optionValueImagePath = $optionValue['image']->store('public/option_values');
+                            }
+    
+                            // Find or create option value
+                            $optionValueModel = ProductOptionValue::firstOrCreate([
+                                'product_option_type_id' => $optionType->id,
+                                'value' => $optionValue['value'],
+                            ], [
+                                'enable_stock' => $optionValue['enable_stock'] ?? false,
+                                'stock' => $optionValue['stock'] ?? -999,
+                                'enable_price' => $optionValue['enable_price'] ?? false,
+                                'price' => $optionValue['price'] ?? 0,
+                                'image' => $optionValueImagePath,
+                            ]);
+    
+                            $optionValueIds[] = $optionValueModel->id;
+                        }
+                    }
+                }
+    
+                // Sync option types and values
+                $product->optionTypes()->sync($optionTypeIds);
                 $product->optionValues()->sync($optionValueIds);
-            } 
-
+            }
+    
+            // Update categories
             if (isset($request->categories)) {
                 $product->categories()->sync($request->categories);
             }
-            
+    
             return response()->json(['code' => http_response_code(), 'data' => ['message' => 'Success']]);
         } catch (Exception $e) {
             return response()->json(['code' => http_response_code(), 'data' => $e->getMessage()], 500);
         }
     }
-
+    
     public function destroy(Request $request)
     {
         try {
