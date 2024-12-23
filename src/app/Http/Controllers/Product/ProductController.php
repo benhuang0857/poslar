@@ -385,17 +385,20 @@ class ProductController extends Controller
                                 }
                             }
     
-                            // Find or create option value
-                            $optionValueModel = ProductOptionValue::firstOrCreate([
-                                'product_option_type_id' => $optionType->id,
-                                'value' => $optionValue['value'],
-                            ], [
-                                'enable_stock' => $optionValue['enable_stock'] ?? false,
-                                'stock' => $optionValue['stock'] ?? -999,
-                                'enable_price' => $optionValue['enable_price'] ?? false,
-                                'price' => $optionValue['price'] ?? 0,
-                                'image' => $optionValueImagePath,
-                            ]);
+                            // Find or update option value
+                            $optionValueModel = ProductOptionValue::updateOrCreate(
+                                [
+                                    'product_option_type_id' => $optionType->id,
+                                    'value' => $optionValue['value'],
+                                ],
+                                [
+                                    'enable_stock' => $optionValue['enable_stock'] ?? false,
+                                    'stock' => $optionValue['stock'] ?? -999,
+                                    'enable_price' => $optionValue['enable_price'] ?? false,
+                                    'price' => $optionValue['price'] ?? 0,
+                                    'image' => $optionValueImagePath,
+                                ]
+                            );
     
                             $optionValueIds[] = $optionValueModel->id;
                         }
