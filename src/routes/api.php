@@ -26,11 +26,12 @@ function registerRoutes($prefix = '', $middleware = [])
 {
     Route::prefix($prefix)->middleware($middleware)->group(function () {
         // User routes
-        Route::get('users', [UserController::class, 'all']);
-        Route::get('users/{id}', [UserController::class, 'show']);
-        Route::post('users', [UserController::class, 'store']);
-        Route::post('users/{id}', [UserController::class, 'update']);
-        Route::delete('users', [UserController::class, 'destroy']);
+        Route::get('user', [UserController::class, 'all']);
+        Route::get('user/{id}', [UserController::class, 'show']);
+        Route::post('user', [UserController::class, 'store']);
+        Route::post('user/{id}', [UserController::class, 'update']);
+        Route::delete('user', [UserController::class, 'destroy']);
+        Route::post('login/user', [UserController::class, 'login']);
 
         // Customer routes
         Route::get('customer', [CustomerController::class, 'all']);
@@ -38,6 +39,7 @@ function registerRoutes($prefix = '', $middleware = [])
         Route::post('customer', [CustomerController::class, 'store']);
         Route::post('customer/{id}', [CustomerController::class, 'update']);
         Route::delete('customer', [CustomerController::class, 'destroy']);
+        Route::post('login/customer', [CustomerController::class, 'login']);
 
         // Product routes
         Route::get('products', [ProductController::class, 'all']);

@@ -7,6 +7,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
+use Exception;
 
 class UserController extends Controller
 {
@@ -55,17 +58,17 @@ class UserController extends Controller
 
     public function update(Request $request, $id)
     {
-        $user = User::find($id);
-
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
-        }
-
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|string|email|max:255|unique:users,email,' . $id,
             'password' => 'sometimes|string|min:8',
         ]);
+        
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
@@ -106,5 +109,40 @@ class UserController extends Controller
         }
     
         return response()->json(['message' => 'Users deleted successfully'], 200);
+    }
+
+    public function login(Request $request) 
+    {
+        // Validate the request
+        $request->validate([
+            'email' => 'required|string',
+            'password' => 'required|string',
+        ]);
+    
+        // Fetch the user using the `mobile` field
+        $user = User::where('email', $request->input('email'))->first();
+    
+        // Check if the user exists and if the password matches
+        if (!$user || !Hash::check($request->input('password'), $user->password)) {
+            return response()->json([
+                'message' => 'Invalid mobile or password.',
+            ], 401);
+        }
+    
+        try {
+            // Generate JWT token for the user
+            $token = JWTAuth::fromUser($user);
+        } catch (JWTException $e) {
+            return response()->json([
+                'message' => 'Could not create token.',
+            ], 500);
+        }
+    
+        // Respond with the token and user details
+        return response()->json([
+            'message' => 'Login successful',
+            'token' => $token,
+            'user' => $user,
+        ], 200);
     }
 }

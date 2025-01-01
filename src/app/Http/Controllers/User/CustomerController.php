@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
 use Exception;
 
 class CustomerController extends Controller
@@ -108,6 +110,41 @@ class CustomerController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function login(Request $request) 
+    {
+        // Validate the request
+        $request->validate([
+            'mobile' => 'required|string',
+            'password' => 'required|string',
+        ]);
+    
+        // Fetch the customer using the `mobile` field
+        $customer = Customer::where('mobile', $request->input('mobile'))->first();
+    
+        // Check if the customer exists and if the password matches
+        if (!$customer || !Hash::check($request->input('password'), $customer->password)) {
+            return response()->json([
+                'message' => 'Invalid mobile or password.',
+            ], 401);
+        }
+    
+        try {
+            // Generate JWT token for the customer
+            $token = JWTAuth::fromUser($customer);
+        } catch (JWTException $e) {
+            return response()->json([
+                'message' => 'Could not create token.',
+            ], 500);
+        }
+    
+        // Respond with the token and customer details
+        return response()->json([
+            'message' => 'Login successful',
+            'token' => $token,
+            'customer' => $customer,
+        ], 200);
     }
 
 }

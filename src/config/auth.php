@@ -35,9 +35,22 @@ return [
     */
 
     "guards" => [
-        "web" => [
-            "driver" => "session",
-            "provider" => "users",
+        // "web" => [
+        //     "driver" => "session",
+        //     "provider" => "users",
+        // ],
+        // 'api' => [
+        //     'driver' => 'jwt',
+        //     'provider' => 'customers',
+        // ],
+
+        'user' => [
+            'driver' => 'jwt',
+            'provider' => 'users',
+        ],
+        'customer' => [
+            'driver' => 'jwt',
+            'provider' => 'customers',
         ],
     ],
 
@@ -59,9 +72,17 @@ return [
     */
 
     "providers" => [
-        "users" => [
-            "driver" => "eloquent",
-            "model" => env("AUTH_MODEL", App\Models\User::class),
+        // "users" => [
+        //     "driver" => "eloquent",
+        //     "model" => env("AUTH_MODEL", App\Models\User::class),
+        // ],
+        'users' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\User::class,
+        ],
+        'customers' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Customer::class,
         ],
 
         // 'users' => [
