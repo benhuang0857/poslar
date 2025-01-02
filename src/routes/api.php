@@ -15,6 +15,7 @@ use App\Http\Controllers\Store\StoreController;
 use App\Http\Controllers\Store\DiningTableController;
 use App\Http\Controllers\Store\PaymentController;
 use App\Http\Controllers\Store\PromotionController;
+use App\Http\Controllers\Store\DutyHandoverController;
 use App\Http\Middleware\JwtMiddleware;
 
 /**
@@ -119,6 +120,13 @@ function registerRoutes($prefix = '', $middleware = [])
             Route::delete('order', [OrderController::class, 'destroy']);
             Route::get('kitch', [OrderController::class, 'get_kitch_today_order']);
             Route::post('kitch/{id}', [OrderController::class, 'update_kitch_order']);
+
+            // Duty handover
+            Route::get('duty-handover', [DutyHandoverController::class, 'all']);
+            Route::post('duty-handover', [DutyHandoverController::class, 'store']);
+            Route::get('duty-handover/{id}', [DutyHandoverController::class, 'show']);
+            Route::post('duty-handover/{id}', [DutyHandoverController::class, 'update']);
+            Route::delete('duty-handover', [DutyHandoverController::class, 'destroy']);
         });
     });
 }
