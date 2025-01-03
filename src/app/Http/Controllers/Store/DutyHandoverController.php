@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Store;
 
 use App\Models\Store\DutyHandover;
+use App\Models\Order\Order;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;

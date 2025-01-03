@@ -12,15 +12,25 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('duty_handovers', function (Blueprint $table) {
-            $table->id(); // Primary key
-            $table->unsignedBigInteger('user_id'); // Current duty holder
+            $table->id();
+            $table->unsignedBigInteger('user_id');
             $table->text('note')->nullable();
             $table->boolean('status')->default(false);
-            $table->timestamp('last_triggered_at')->nullable(); // Last action timestamp
-            $table->timestamps(); // created_at and updated_at
-        
-            // Foreign key constraints
+            $table->timestamp('last_triggered_at')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+        });
+
+        Schema::create('duty_shifts', function (Blueprint $table) {
+            $table->id();
+            $table->string('title');
+            $table->time('start_time')->default("00:00:00");
+            $table->time('end_time')->default("00:00:00");
+            $table->boolean('status')->default(false);
+            $table->softDeletes();
+            $table->timestamps();
         });
     }
 
@@ -30,5 +40,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('duty_handovers');
+        Schema::dropIfExists('duty_shift');
     }
 };

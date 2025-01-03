@@ -16,6 +16,8 @@ use App\Http\Controllers\Store\DiningTableController;
 use App\Http\Controllers\Store\PaymentController;
 use App\Http\Controllers\Store\PromotionController;
 use App\Http\Controllers\Store\DutyHandoverController;
+use App\Http\Controllers\Store\DutyShiftController;
+use App\Http\Controllers\Store\ReportController;
 use App\Http\Middleware\JwtMiddleware;
 
 /**
@@ -51,6 +53,7 @@ function registerRoutes($prefix = '', $middleware = [])
         Route::get('promotion/{id}', [PromotionController::class, 'show']);
         Route::get('order', [OrderController::class, 'all']);
         Route::get('order/{serial_number}', [OrderController::class, 'show']);
+        Route::post('order', [OrderController::class, 'store']);
 
         Route::middleware([JwtMiddleware::class])->group(function () {
 
@@ -115,7 +118,6 @@ function registerRoutes($prefix = '', $middleware = [])
             Route::delete('promotion', [PromotionController::class, 'destroy']);
 
             // Order routes
-            Route::post('order', [OrderController::class, 'store']);
             Route::post('order/{serial_number}', [OrderController::class, 'update']);
             Route::delete('order', [OrderController::class, 'destroy']);
             Route::get('kitch', [OrderController::class, 'get_kitch_today_order']);
@@ -127,6 +129,22 @@ function registerRoutes($prefix = '', $middleware = [])
             Route::get('duty-handover/{id}', [DutyHandoverController::class, 'show']);
             Route::post('duty-handover/{id}', [DutyHandoverController::class, 'update']);
             Route::delete('duty-handover', [DutyHandoverController::class, 'destroy']);
+
+            // Duty shift
+            Route::get('duty-shift', [DutyShiftController::class, 'all']);
+            Route::post('duty-shift', [DutyShiftController::class, 'store']);
+            Route::get('duty-shift/{id}', [DutyShiftController::class, 'show']);
+            Route::post('duty-shift/{id}', [DutyShiftController::class, 'update']);
+            Route::delete('duty-shift', [DutyShiftController::class, 'destroy']);
+
+            // Report
+            Route::get('report/handover', [ReportController::class, 'handoverReport']);
+            Route::get('report/hourly', [ReportController::class, 'hourlyReport']);
+            Route::get('report/daily', [ReportController::class, 'dailyReport']);
+            Route::get('report/weekly', [ReportController::class, 'weeklyReport']);
+            Route::get('report/monthly', [ReportController::class, 'monthlyReport']);
+            Route::get('report/quarterly', [ReportController::class, 'quarterlyReport']);
+            Route::get('report/yearly', [ReportController::class, 'yearlyReport']);
         });
     });
 }

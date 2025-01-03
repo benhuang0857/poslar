@@ -4,20 +4,17 @@ namespace App\Models\Store;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class DutyHandover extends Model
+class DutyShift extends Model
 {
-    use HasFactory, SoftDeletes;
-
-    protected $table = 'duty_handovers';
+    protected $table = 'duty_shifts';
 
     protected $fillable = [
-        'user_id',
-        'note',
+        'title',
+        'start_time',
+        'end_time',
         'status',
-        'last_triggered_at',
     ];
 
     const DELETED_AT = 'deleted_at';
