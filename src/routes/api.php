@@ -55,12 +55,13 @@ function registerRoutes($prefix = '', $middleware = [])
         Route::get('order/{serial_number}', [OrderController::class, 'show']);
         Route::post('order', [OrderController::class, 'store']);
 
+        Route::post('user', [UserController::class, 'store']);
+
         Route::middleware([JwtMiddleware::class])->group(function () {
 
             // User routes
             Route::get('user', [UserController::class, 'all']);
             Route::get('user/{id}', [UserController::class, 'show']);
-            Route::post('user', [UserController::class, 'store']);
             Route::post('user/{id}', [UserController::class, 'update']);
             Route::delete('user', [UserController::class, 'destroy']);
 
