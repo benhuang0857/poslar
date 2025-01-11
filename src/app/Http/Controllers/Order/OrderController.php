@@ -11,6 +11,7 @@ use App\Models\Product\Product;
 use App\Models\Product\ProductOptionValue;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Exceptions\OutOfStockException;
 use Exception;
 use DB;
 
@@ -93,7 +94,15 @@ class OrderController extends Controller
                 $product = Product::findOrFail($productData['id']);
 
                 if ($product->enable_stock && $product->stock < $productData['quantity']) {
-                    throw new Exception('Product "' . $product->name . '" is out of stock');
+                    // throw new Exception('Product "' . $product->name. '(' . $product->id . ')' . '" is out of stock');
+                    return response()->json([
+                        'code' => 201,
+                        'data' => [
+                            'product_id' => $product->id,
+                            'message' => '商品: "' . $product->name. '" 售罄',
+                            'serial_number' => $order->serial_number,
+                        ],
+                    ], 201);
                 }
 
                 $productOptions = [];
@@ -103,7 +112,17 @@ class OrderController extends Controller
 
                     foreach ($optionValues as $optionValue) {
                         if ($optionValue->enable_stock && $optionValue->stock < $productData['quantity']) {
-                            throw new Exception('Option "' . $optionValue->value . '" is out of stock');
+                            // throw new Exception('Option "' . $optionValue->value . '" is out of stock');
+
+                            return response()->json([
+                                'code' => 201,
+                                'data' => [
+                                    'product_id' => $product->id,
+                                    'option_value_id' => $optionValue->id,
+                                    'message' => '商品品項: "' . $optionValue->value . '" 售罄',
+                                    'serial_number' => $order->serial_number,
+                                ],
+                            ], 201);
                         }
 
                         // Create order item for each option
