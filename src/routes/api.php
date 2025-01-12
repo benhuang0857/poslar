@@ -54,6 +54,8 @@ function registerRoutes($prefix = '', $middleware = [])
         Route::get('order', [OrderController::class, 'all']);
         Route::get('order/{serial_number}', [OrderController::class, 'show']);
         Route::post('order', [OrderController::class, 'store']);
+        Route::get('kitch', [OrderController::class, 'get_kitch_today_order']);
+        Route::post('kitch/{id}', [OrderController::class, 'update_kitch_order']);
 
         Route::post('user', [UserController::class, 'store']);
 
@@ -121,8 +123,6 @@ function registerRoutes($prefix = '', $middleware = [])
             // Order routes
             Route::post('order/{serial_number}', [OrderController::class, 'update']);
             Route::delete('order', [OrderController::class, 'destroy']);
-            Route::get('kitch', [OrderController::class, 'get_kitch_today_order']);
-            Route::post('kitch/{id}', [OrderController::class, 'update_kitch_order']);
 
             // Duty handover
             Route::get('duty-handover', [DutyHandoverController::class, 'all']);

@@ -17,10 +17,10 @@ use DB;
 
 class OrderController extends Controller
 {
-    public function all()
+    public function all(Request $request)
     {
         try {
-            $result = Order::with([
+            $query = Order::with([
                 'user',
                 'customer',
                 'payment',
@@ -28,11 +28,39 @@ class OrderController extends Controller
                 'dining_table',
                 'items.product',
                 'items.options',
-            ])->get();
+            ]);
 
-            return response()->json(['code' => http_response_code(), 'data' => ['list' => $result]]);
+            if ($request->has('start_date') && $request->has('end_date')) {
+                $query->whereBetween('created_at', [$request->input('start_date'), $request->input('end_date')]);
+            }
+
+            if ($request->has('status')) {
+                $query->where('status', $request->input('status'));
+            }
+
+            if ($request->has('paid')) {
+                $query->where('paid', filter_var($request->input('paid'), FILTER_VALIDATE_BOOLEAN));
+            }
+
+            if ($request->has('shipping')) {
+                $query->where('shipping', $request->input('shipping'));
+            }
+
+            if (!$request->hasAny(['start_date', 'end_date', 'status', 'paid', 'shipping'])) {
+                $query->whereDate('created_at', now()->toDateString())->limit(100);
+            }
+
+            $result = $query->get();
+
+            return response()->json([
+                'code' => 200,
+                'data' => ['list' => $result]
+            ]);
         } catch (Exception $e) {
-            return response()->json(['code' => http_response_code(), 'data' => $e->getMessage()], 500);
+            return response()->json([
+                'code' => 500,
+                'data' => $e->getMessage()
+            ], 500);
         }
     }
 
