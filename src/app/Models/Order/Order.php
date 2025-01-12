@@ -16,13 +16,17 @@ class Order extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'serial_number',
         'user_id',
         'customer_id',
         'dining_table_id',
+        'promotion_id',
         'paid',
+        'shipping',
         'total_price',
         'final_price',
-        'serial_number',
+        'note',
+        'status'
     ];
 
     const DELETED_AT = 'deleted_at';

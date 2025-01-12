@@ -67,6 +67,7 @@ class OrderController extends Controller
                 'promotion_id'      => 'nullable|integer|min:1',
                 'paid'              => 'required|boolean',
                 'shipping'          => 'required|string',
+                'note'              => 'nullable|string',
                 'products'          => 'required|array',
                 'products.*.id'     => 'required|exists:products,id',
                 'products.*.quantity' => 'required|integer|min:1',
@@ -88,6 +89,7 @@ class OrderController extends Controller
                 'final_price'       => 0,
                 'paid'              => $validated['paid'],
                 'shipping'          => $validated['shipping'],
+                'note'              => $validated['note'] ?? null,
             ]);
 
             foreach ($validated['products'] as $productData) {
@@ -164,12 +166,12 @@ class OrderController extends Controller
             DB::commit();
 
             return response()->json([
-                'code' => 201,
+                'code' => 200,
                 'data' => [
                     'message' => 'Create order successfully',
                     'serial_number' => $order->serial_number,
                 ],
-            ], 201);
+            ], 200);
 
         } catch (ValidationException $e) {
             return response()->json([
@@ -247,9 +249,9 @@ class OrderController extends Controller
             }
     
             return response()->json([
-                'code' => 204,
+                'code' => 200,
                 'data' => ['message' => 'Orders emptied successfully'],
-            ], 204);
+            ], 200);
         } catch (ValidationException $e) {
             return response()->json([
                 'code' => 422,

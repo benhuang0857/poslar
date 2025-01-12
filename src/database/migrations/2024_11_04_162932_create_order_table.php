@@ -23,6 +23,7 @@ return new class extends Migration
             $table->decimal('final_price', 10, 2);
             $table->boolean('paid')->default(false);
             $table->string('shipping')->nullable();
+            $table->text('note')->nullable();
             $table->enum('status', ['process', 'pending', 'completed', 'cancelled', 'delivered'])->default('process');
             $table->timestamps();
         });
