@@ -9,17 +9,25 @@ use App\Models\Cart\Cart;
 use App\Models\Cart\CartItem;
 use App\Models\Product\Product;
 use App\Models\Product\ProductOptionValue;
+use App\Services\CheckoutService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use App\Exceptions\OutOfStockException;
+use Illuminate\Support\Facades\DB;
 use Exception;
-use DB;
 
 class OrderController extends Controller
 {
+    protected $checkoutService;
+
+    public function __construct(CheckoutService $checkoutService)
+    {
+        $this->checkoutService = $checkoutService;
+    }
+
     public function all(Request $request)
     {
         try {
+            // Initialize the query with necessary relationships
             $query = Order::with([
                 'user',
                 'customer',
@@ -29,40 +37,31 @@ class OrderController extends Controller
                 'items.product',
                 'items.options',
             ]);
-
-            if ($request->has('start_date') && $request->has('end_date')) {
-                $query->whereBetween('created_at', [$request->input('start_date'), $request->input('end_date')]);
-            }
-
-            if ($request->has('status')) {
-                $query->where('status', $request->input('status'));
-            }
-
-            if ($request->has('paid')) {
-                $query->where('paid', filter_var($request->input('paid'), FILTER_VALIDATE_BOOLEAN));
-            }
-
-            if ($request->has('shipping')) {
-                $query->where('shipping', $request->input('shipping'));
-            }
-
-            if (!$request->hasAny(['start_date', 'end_date', 'status', 'paid', 'shipping'])) {
-                $query->whereDate('created_at', now()->toDateString())->limit(100);
-            }
-
+    
+            // Extract filters from request
+            $filters = $request->only(['start_date', 'end_date', 'status', 'paid', 'shipping']);
+    
+            // Apply filters using the service
+            $query = $this->checkoutService->applyFilters($query, $filters);
+    
+            // Retrieve all results without pagination
             $result = $query->get();
-
+    
+            // Return response
             return response()->json([
                 'code' => 200,
-                'data' => ['list' => $result]
+                'data' => [
+                    'list' => $result, // Directly return all records
+                ],
             ]);
         } catch (Exception $e) {
+            // Handle any unexpected exceptions
             return response()->json([
                 'code' => 500,
-                'data' => $e->getMessage()
+                'data' => $e->getMessage(),
             ], 500);
         }
-    }
+    }    
 
     public function show($serial_number)
     {
@@ -86,7 +85,7 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         try {
-            // 驗證請求數據
+            // Validate request data
             $validated = $request->validate([
                 'user_id'           => 'required|integer|min:1',
                 'customer_id'       => 'nullable|integer|min:1',
@@ -105,7 +104,7 @@ class OrderController extends Controller
 
             DB::beginTransaction();
 
-            // 創建訂單
+            // Create order
             $order = Order::create([
                 'serial_number'     => (new Order)->generateSerialNumber(),
                 'user_id'           => $validated['user_id'],
@@ -121,73 +120,51 @@ class OrderController extends Controller
             ]);
 
             foreach ($validated['products'] as $productData) {
+
                 $product = Product::findOrFail($productData['id']);
 
-                if ($product->enable_stock && $product->stock < $productData['quantity']) {
-                    // throw new Exception('Product "' . $product->name. '(' . $product->id . ')' . '" is out of stock');
-                    return response()->json([
-                        'code' => 201,
-                        'data' => [
-                            'product_id' => $product->id,
-                            'message' => '商品: "' . $product->name. '" 售罄',
-                            'serial_number' => $order->serial_number,
-                        ],
-                    ], 201);
-                }
+                // Check product stock
+                $this->checkoutService->checkStock($product, $productData['quantity'], 'product');
 
                 $productOptions = [];
+                $totalItemPrice = $product->price; // Base product price
 
                 if (!empty($productData['options'])) {
                     $optionValues = ProductOptionValue::whereIn('id', $productData['options'])->get();
 
                     foreach ($optionValues as $optionValue) {
-                        if ($optionValue->enable_stock && $optionValue->stock < $productData['quantity']) {
-                            // throw new Exception('Option "' . $optionValue->value . '" is out of stock');
-
-                            return response()->json([
-                                'code' => 201,
-                                'data' => [
-                                    'product_id' => $product->id,
-                                    'option_value_id' => $optionValue->id,
-                                    'message' => '商品品項: "' . $optionValue->value . '" 售罄',
-                                    'serial_number' => $order->serial_number,
-                                ],
-                            ], 201);
-                        }
-
-                        // Create order item for each option
-                        $orderItem = $order->items()->create([
-                            'product_id'   => $product->id,
-                            'quantity'     => $productData['quantity'],
-                            'price'        => $product->price * $productData['quantity'],
-                            'product_name' => $product->name, // Save the product name
-                            'product_option' => $optionValue->value
-                        ]);
-
-                        // Attach the selected option to the order item
-                        $orderItem->options()->attach($optionValue->id);
-                        $optionValue->decrement('stock', $productData['quantity']);
-
-                        // Store the option values as a string or JSON
+                        // Check option stock
+                        $this->checkoutService->checkStock($optionValue, $productData['quantity'], 'options');
+                        // Add option price to total price if enabled
+                        if ($optionValue->enable_price) $totalItemPrice += $optionValue->price;
+                        // Decrease option stock if enabled
+                        if($optionValue->enable) $optionValue->decrement('stock', $productData['quantity']);
+                        // Save option values
                         $productOptions[] = $optionValue->value;
                     }
-                } else {
-                    // Create order item without options
-                    $orderItem = $order->items()->create([
-                        'product_id'   => $product->id,
-                        'quantity'     => $productData['quantity'],
-                        'price'        => $product->price * $productData['quantity'],
-                        'product_name' => $product->name, // Save the product name
-                    ]);
                 }
 
-                // Update the product's stock if necessary
+                // Create order item
+                $orderItem = $order->items()->create([
+                    'product_id'   => $product->id,
+                    'quantity'     => $productData['quantity'],
+                    'price'        => $totalItemPrice * $productData['quantity'],
+                    'product_name' => $product->name,
+                    'product_option' => json_encode($productOptions), // Save option values as JSON
+                ]);
+
+                // Attach options to the order item
+                if (!empty($productData['options'])) {
+                    $orderItem->options()->attach($productData['options']);
+                }
+
+                // Decrease product stock
                 if ($product->enable_stock) {
                     $product->decrement('stock', $productData['quantity']);
                 }
             }
 
-            // Calculate the total and final price
+            // Calculate order total and final prices
             $order->calculateTotalPrice();
             $order->calculateFinalPrice();
 
@@ -206,6 +183,14 @@ class OrderController extends Controller
                 'code' => 422,
                 'data' => $e->errors(),
             ], 422);
+        } catch (OutOfStockException $e) {
+            return response()->json([
+                'code' => 422,
+                'data' => [
+                    'message' => $e->getMessage(),
+                    'details' => $e->getData(),
+                ],
+            ], 422);
         } catch (Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -221,35 +206,36 @@ class OrderController extends Controller
             // Validate the request data
             $validated = $request->validate([
                 'paid'   => 'required|boolean',
-                'status' => 'nullable|string',
+                'status' => 'nullable|string|in:process,pending,completed,cancelled,delivered',
             ]);
     
             // Find the order by serial number
             $order = Order::where('serial_number', $serial_number)->firstOrFail();
     
             // Update the order fields
-            $order->paid = $validated['paid'];
-            $order->status = isset($validated['status']) ? $validated['status'] : $order->status;  // Use the current status if no new one is provided
-            $order->save();
+            $order->fill([
+                'paid' => $validated['paid'],
+                'status' => $validated['status'] ?? $order->status, // Use current status if no new one is provided
+            ])->save();
     
             // Return a success response
             return response()->json([
-                'code' => 200, // HTTP status code for success
+                'code' => 200,
                 'data' => [
-                    'message' => 'Update order successfully',
+                    'message' => 'Order updated successfully.',
                     'serial_number' => $order->serial_number,
-                ]
-            ], 200); // 200 OK
+                ],
+            ], 200);
     
-        } catch (Exception $e) {
-            // Return an error response
+        } catch (\Exception $e) {
+            // Handle other exceptions
             return response()->json([
-                'code' => 500, // Internal server error
+                'code' => 500,
                 'data' => $e->getMessage(),
-            ], 500); // 500 Internal Server Error
+            ], 500);
         }
     }
-
+    
     public function destroy(Request $request)
     {
         try {

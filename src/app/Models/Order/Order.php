@@ -63,21 +63,51 @@ class Order extends Model
 
     public function calculateTotalPrice()
     {
+        // Ensure `items` relation is loaded to avoid N+1 queries
+        if (!$this->relationLoaded('items')) {
+            $this->load('items');
+        }
+    
+        // Calculate total price by summing all items' prices
         $this->total_price = $this->items->sum(function ($item) {
             return $item->price;
         });
+    
+        // Save the updated total price
         $this->save();
     }
 
     public function calculateFinalPrice()
     {
         $promotion = $this->promotion;
+    
+        // Check if a promotion exists
+        if (!$promotion) {
+            $this->final_price = $this->total_price;
+            $this->save();
+            return;
+        }
 
-        $discount = $promotion ? $promotion->discount : 1;
-        $this->final_price = $this->total_price * $discount;
-
+        // Check if promotion is active and not expired
+        if ($promotion->status && $promotion->end_time >= now()) {
+            // Handle numeric discount type
+            if ($promotion->type === 'numeric') {
+                $discount = $promotion->discount;
+                $this->final_price = $this->total_price - $discount;
+            } 
+            // Handle percentage discount type
+            elseif ($promotion->type === 'percentage') {
+                $discount = $promotion->discount / 100; // Convert percentage to decimal
+                $this->final_price = $this->total_price * (1 - $discount);
+            }
+        } else {
+            // If promotion is inactive or expired, final price equals total price
+            $this->final_price = $this->total_price;
+        }
+    
+        // Save the updated final price
         $this->save();
-    }
+    }    
 
     public function generateSerialNumber()
     {

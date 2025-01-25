@@ -15,7 +15,9 @@ class Promotion extends Model
     protected $fillable = [
         'name',
         'description',
+        'type',
         'discount',
+        'enable_expired',
         'start_time',
         'end_time',
         'status',

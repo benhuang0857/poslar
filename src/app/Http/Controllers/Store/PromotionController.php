@@ -35,12 +35,13 @@ class PromotionController extends Controller
     {
         try {
             $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'description' => 'nullable|string',
-                'discount' => 'nullable|numeric|min:0',
-                'start_time' => 'nullable|string',
-                'end_time' => 'nullable|string',
-                'status' => 'required|boolean',
+                'name'          => 'required|string|max:255',
+                'description'   => 'nullable|string',
+                'type'          => 'nullable|string',
+                'discount'      => 'nullable|numeric|min:0',
+                'start_time'    => 'nullable|string',
+                'end_time'      => 'nullable|string',
+                'status'        => 'required|boolean',
             ]);
     
             $promotion = Promotion::create($validated);
@@ -55,12 +56,13 @@ class PromotionController extends Controller
     {
         try {
             $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'description' => 'nullable|string',
-                'discount' => 'nullable|numeric|min:0',
-                'start_time' => 'nullable|string',
-                'end_time' => 'nullable|string',
-                'status' => 'required|boolean',
+                'name'          => 'required|string|max:255',
+                'description'   => 'nullable|string',
+                'type'          => 'nullable|string',
+                'discount'      => 'nullable|numeric|min:0',
+                'start_time'    => 'nullable|string',
+                'end_time'      => 'nullable|string',
+                'status'        => 'required|boolean',
             ]);
 
             $promotion = Promotion::findOrFail($id);
