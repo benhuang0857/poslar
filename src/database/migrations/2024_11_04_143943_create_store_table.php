@@ -50,7 +50,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->decimal('discount', 10, 2)->default(0);
             $table->string('type')->default('numeric'); // numeric or percentage
-            $table->boolean('enable_expired')->default('numeric');
+            $table->boolean('enable_expired')->default(false);
             $table->date('start_time')->default('1900-01-01');
             $table->date('end_time')->default('1900-01-01');
             $table->boolean('status')->default(false);
