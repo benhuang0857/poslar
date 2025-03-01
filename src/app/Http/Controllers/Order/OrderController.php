@@ -35,7 +35,7 @@ class OrderController extends Controller
                 'promotion',
                 'dining_table',
                 'items.product',
-                'items.options',
+                'items.options.optionType',
             ]);
     
             // Extract filters from request
@@ -73,7 +73,7 @@ class OrderController extends Controller
                 'promotion',
                 'dining_table',
                 'items.product',
-                'items.options',
+                'items.options.optionType',
             ])->where('serial_number', $serial_number)->first();
 
             return response()->json(['code' => http_response_code(), 'data' => ['list' => $result]]);
