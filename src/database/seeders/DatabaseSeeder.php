@@ -13,14 +13,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // php artisan db:seed
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            "name" => "Test User",
-            "email" => "test@example.com",
-        ]);
-
         $this->call([
             ProductSeeder::class,
             ProductOptionTypeSeeder::class,
@@ -34,6 +26,7 @@ class DatabaseSeeder extends Seeder
             PaymentSeeder::class,
             PromotionSeeder::class,
             CustomerSeeder::class,
+            UserSeeder::class,
         ]);
     }
 }

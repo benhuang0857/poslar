@@ -31,7 +31,7 @@ return new class extends Migration
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('order_id');
-            $table->unsignedBigInteger('product_id');
+            $table->unsignedBigInteger('product_id'); // Ref parents product type
             $table->integer('quantity')->default(1);
             $table->string('product_name')->nullable();
             $table->string('product_option')->nullable();

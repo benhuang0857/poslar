@@ -58,6 +58,7 @@ function registerRoutes($prefix = '', $middleware = [])
         Route::post('kitch/{id}', [OrderController::class, 'update_kitch_order']);
 
         Route::post('user', [UserController::class, 'store']);
+        Route::post('customer', [CustomerController::class, 'store']);
 
         Route::middleware([JwtMiddleware::class])->group(function () {
 
@@ -70,7 +71,6 @@ function registerRoutes($prefix = '', $middleware = [])
             // Customer routes
             Route::get('customer', [CustomerController::class, 'all']);
             Route::get('customer/{id}', [CustomerController::class, 'show']);
-            Route::post('customer', [CustomerController::class, 'store']);
             Route::post('customer/{id}', [CustomerController::class, 'update']);
             Route::delete('customer', [CustomerController::class, 'destroy']);
 
