@@ -5,8 +5,6 @@ namespace App\Http\Controllers\Order;
 use App\Http\Controllers\Controller;
 use App\Models\Order\Order;
 use App\Models\Order\OrderItem;
-use App\Models\Cart\Cart;
-use App\Models\Cart\CartItem;
 use App\Models\Product\Product;
 use App\Models\Product\ProductOptionValue;
 use App\Services\CheckoutService;
