@@ -209,6 +209,8 @@ class OrderController extends Controller
                 'paid'   => 'required|boolean',
                 'status' => 'nullable|string|in:process,pending,completed,cancelled,delivered',
             ]);
+
+            DB::beginTransaction(); // 開始事務
     
             // Find the order by serial number
             $order = Order::where('serial_number', $serial_number)->firstOrFail();
@@ -218,6 +220,9 @@ class OrderController extends Controller
                 'paid' => $validated['paid'],
                 'status' => $validated['status'] ?? $order->status, // Use current status if no new one is provided
             ])->save();
+
+            // 提交事務
+            DB::commit();
     
             // Return a success response
             return response()->json([
@@ -305,34 +310,31 @@ class OrderController extends Controller
     }
 
     public function update_kitch_order(Request $request, $id) 
-    {
+    {    
         try {
-            // Validate the request data
             $validated = $request->validate([
                 'status' => 'required|string',
             ]);
+
+            DB::beginTransaction();
     
-            // Find the order by serial number
             $orderItem = OrderItem::where('id', $id)->firstOrFail();
-    
-            // Update the order fields
             $orderItem->status = $validated['status'];
             $orderItem->save();
     
-            // Return a success response
+            DB::commit();
+    
             return response()->json([
-                'code' => 200, // HTTP status code for success
-                'data' => [
-                    'message' => 'Update order item successfully'
-                ]
-            ], 200); // 200 OK
+                'code' => 200,
+                'data' => ['message' => 'Update order item successfully']
+            ], 200);
     
         } catch (Exception $e) {
-            // Return an error response
+            DB::rollBack();
             return response()->json([
-                'code' => 500, // Internal server error
+                'code' => 500,
                 'data' => $e->getMessage(),
-            ], 500); // 500 Internal Server Error
+            ], 500);
         }
     }
 }
