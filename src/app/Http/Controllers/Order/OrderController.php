@@ -13,6 +13,7 @@ use App\Services\CheckoutService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 use Exception;
 
 class OrderController extends Controller
@@ -293,7 +294,9 @@ class OrderController extends Controller
                 'dining_table',
                 'items.product',
                 'items.options',
-            ])->get();
+            ])
+            ->whereDate('created_at', Carbon::today())
+            ->get();
 
             return response()->json(['code' => http_response_code(), 'data' => ['list' => $result]]);
         } catch (Exception $e) {
