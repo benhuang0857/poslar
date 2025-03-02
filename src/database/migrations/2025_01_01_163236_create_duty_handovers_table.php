@@ -40,6 +40,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('duty_handovers');
-        Schema::dropIfExists('duty_shift');
+        Schema::dropIfExists('duty_shifts');
     }
 };

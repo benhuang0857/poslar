@@ -29,7 +29,7 @@ return new class extends Migration
         Schema::create('dining_table', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->integer('quantity')->defualt(0);
+            $table->integer('quantity')->default(0);
             $table->string('qrcode')->nullable();
             $table->text('description')->nullable();
             $table->boolean('status')->default(false);
